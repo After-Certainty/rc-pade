@@ -1,0 +1,10 @@
+apiVersion: rc-pade.local/v1alpha1
+kind: ProjectionPolicy
+rules:
+  - match:
+      kind: aws.s3
+      interfaceType: bucket
+    operations:
+      PutObject:
+        capability: aws.s3.bucket.write
+        access: write
