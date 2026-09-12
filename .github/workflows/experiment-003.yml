@@ -1,0 +1,42 @@
+name: experiment-003-source-to-session
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/003-source-to-session/**'
+      - 'examples/s3-put-object/policy.yaml'
+      - 'cmd/**'
+      - 'internal/**'
+      - '.github/workflows/experiment-003.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-to-session:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26.6'
+          cache: true
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Run Experiment 003
+        env:
+          RC_PADE_EXPERIMENT_WORK: ${{ runner.temp }}/rc-pade-experiment-003
+        run: bash experiments/003-source-to-session/run.sh
+      - name: Upload generated interop artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: experiment-003-generated-artifacts
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/rc-pade-experiment-003/generated-runtime-conditions.yaml
+            ${{ runner.temp }}/rc-pade-experiment-003/generated-pade.yaml
+            ${{ runner.temp }}/rc-pade-experiment-003/rc-maintenance/report.md
