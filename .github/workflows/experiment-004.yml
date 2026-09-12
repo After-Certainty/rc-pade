@@ -1,0 +1,58 @@
+name: experiment-004-coder-workspace
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/004-coder-workspace/**'
+      - 'experiments/002-real-rc-profile/**'
+      - 'examples/s3-put-object/policy.yaml'
+      - 'cmd/**'
+      - 'internal/**'
+      - '.github/workflows/experiment-004.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pade-validate-plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26.6'
+          cache: true
+      - name: Generate DevelopmentSession from pinned Experiment 002 profile
+        run: |
+          mkdir -p experiments/004-coder-workspace/generated
+          go run ./cmd/rc-pade generate \
+            --profile experiments/002-real-rc-profile/runtime-conditions.yaml \
+            --policy examples/s3-put-object/policy.yaml \
+            > experiments/004-coder-workspace/generated/development-session.yaml
+          diff -u \
+            experiments/002-real-rc-profile/expected-pade.yaml \
+            experiments/004-coder-workspace/generated/development-session.yaml
+      - name: Checkout PADE reference Consumer
+        uses: actions/checkout@v5
+        with:
+          repository: After-Certainty/pade
+          ref: v0.2.1
+          path: .work/pade
+      - name: Validate and plan with PADE
+        run: |
+          go run ./cmd/pade validate -f "$GITHUB_WORKSPACE/experiments/004-coder-workspace/generated/development-session.yaml"
+          go run ./cmd/pade plan -f "$GITHUB_WORKSPACE/experiments/004-coder-workspace/generated/development-session.yaml" \
+            | tee "$GITHUB_WORKSPACE/experiments/004-coder-workspace/generated/pade-plan.txt"
+          grep -q 'aws.s3.bucket.write' "$GITHUB_WORKSPACE/experiments/004-coder-workspace/generated/pade-plan.txt"
+        working-directory: .work/pade
+      - name: Upload generated PADE artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: experiment-004-generated-artifacts
+          if-no-files-found: warn
+          path: |
+            experiments/004-coder-workspace/generated/development-session.yaml
+            experiments/004-coder-workspace/generated/pade-plan.txt
