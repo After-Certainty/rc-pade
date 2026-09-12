@@ -109,6 +109,24 @@ If Go is missing, the script bootstraps mise and the Go version from this reposi
 
 CI does not assert `CODER=true`. The Coder-workspace execution remains a documented manual integration experiment.
 
+## Observed GitHub authority boundary
+
+The successful manual run also exposed a separate development-session boundary: the Coder workspace had enough GitHub access to clone and read the repository, but it did not have authority to push the resulting branch back to GitHub.
+
+This was not treated as a failure of the source → RC → rc-pade → PADE experiment, and the workspace was not granted broader GitHub credentials merely to publish the result. Instead, the completed Git history was exported from the Coder workspace with `git bundle`, copied across the workspace boundary to the developer's local machine, and pushed from there using the local machine's existing GitHub write authority.
+
+That distinction is useful evidence for the broader model:
+
+```text
+application-derived demand
+  → e.g. aws.s3.bucket.write
+
+development-workflow authority
+  → e.g. permission to push to the source repository
+```
+
+The latter is not application runtime demand and therefore should not be inferred by Runtime Conditions from application source. It may eventually be relevant to PADE or adjacent developer-session policy, but Experiment 004 intentionally does not solve it. The bundle transfer preserves the experiment's trust boundary rather than hiding it by introducing unrelated credentials.
+
 ## Acceptance criteria
 
 1. Cursor is connected to a real Coder workspace.
