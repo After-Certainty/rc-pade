@@ -1,0 +1,13 @@
+apiVersion: pade.local/v1alpha1
+kind: DevelopmentSession
+metadata:
+  name: s3-put-object
+  annotations:
+    rc-pade.local/source-profile: s3-put-object
+    rc-pade.local/source-workload-uri: file://./examples/s3-put-object/app
+    rc-pade.local/source-workload-version: 0.0.1
+spec:
+  capabilities:
+    aws.s3.bucket.write:
+      access: write
+      required: true

@@ -1,0 +1,13 @@
+apiVersion: runtimeconditions.io/v1alpha1
+kind: RuntimeConditionsProfile
+metadata:
+  name: s3-put-object
+workload:
+  uri: file://./examples/s3-put-object/app
+  version: 0.0.1
+conditions:
+  - kind: aws.s3
+    interface:
+      type: bucket
+      operations:
+        - name: PutObject

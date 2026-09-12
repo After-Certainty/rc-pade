@@ -1,0 +1,14 @@
+[tools]
+go = "1.26.6"
+
+[tasks.test]
+description = "Run unit tests"
+run = "go test ./..."
+
+[tasks.demo]
+description = "Generate the S3 PutObject DevelopmentSession"
+run = "go run ./cmd/rc-pade generate --profile examples/s3-put-object/runtime-conditions.yaml --policy examples/s3-put-object/policy.yaml"
+
+[tasks.check-demo]
+description = "Verify the demo output is stable"
+run = "go run ./cmd/rc-pade generate --profile examples/s3-put-object/runtime-conditions.yaml --policy examples/s3-put-object/policy.yaml | diff -u examples/s3-put-object/expected-pade.yaml -"
