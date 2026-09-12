@@ -24,3 +24,9 @@ jobs:
             --profile examples/s3-put-object/runtime-conditions.yaml \
             --policy examples/s3-put-object/policy.yaml \
             | diff -u examples/s3-put-object/expected-pade.yaml -
+      - name: Verify pinned Runtime Conditions profiler projection
+        run: |
+          go run ./cmd/rc-pade generate \
+            --profile experiments/002-real-rc-profile/runtime-conditions.yaml \
+            --policy examples/s3-put-object/policy.yaml \
+            | diff -u experiments/002-real-rc-profile/expected-pade.yaml -
