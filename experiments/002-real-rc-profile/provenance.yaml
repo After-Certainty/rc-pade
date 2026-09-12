@@ -1,0 +1,7 @@
+source:
+  repository: runtimeconditions/sdk-authorship-discovery
+  commit: d89c75ee49145277158d8d4e29383d10cca8d1f3
+  applicationPath: s3/python/direct-client/src/s3_direct_client/storage.py
+  applicationBlob: 81c18cc1a076b5a1f2968fe56a2efd4ef9c5d105
+  profilePath: authorship/aws-python/results/profiles/direct-client.yaml
+  profileBlob: 05c21059412a636b0364edd1ffb512ced9e670b0

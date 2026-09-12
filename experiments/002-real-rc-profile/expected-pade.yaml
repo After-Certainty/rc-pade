@@ -1,0 +1,13 @@
+apiVersion: pade.local/v1alpha1
+kind: DevelopmentSession
+metadata:
+    name: aws-s3-direct-client
+    annotations:
+        rc-pade.local/source-profile: aws-s3-direct-client
+        rc-pade.local/source-workload-uri: https://github.com/runtimeconditions/sdk-authorship-discovery/tree/main/s3/python/direct-client
+        rc-pade.local/source-workload-version: 0.1.0
+spec:
+    capabilities:
+        aws.s3.bucket.write:
+            access: write
+            required: true
