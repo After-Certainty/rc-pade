@@ -1,0 +1,19 @@
+runtimeConditions:
+  sdkAuthorshipDiscovery:
+    repository: https://github.com/runtimeconditions/sdk-authorship-discovery.git
+    commit: 2b54b1230afc6075986b888701ef1b5c91c9ec4b
+  extensions:
+    repository: https://github.com/runtimeconditions/extensions.git
+    commit: e4c228ebab54c294783059772e973a665fc5f3f5
+  pythonProfiler:
+    repository: https://github.com/runtimeconditions/python-rc-profiler.git
+    commit: 3c882dbc7427f4c13bd127bc13069e11fc548e67
+awsSdk:
+  boto3: 1.43.80
+  botocore: 1.43.80
+  s3transfer: 0.19.2
+fixture:
+  upstreamPath: s3/python/direct-client/src/s3_direct_client/storage.py
+  sourceBlob: 81c18cc1a076b5a1f2968fe56a2efd4ef9c5d105
+  acceptedProfilePath: authorship/aws-python/results/profiles/direct-client.yaml
+  acceptedProfileBlob: 05c21059412a636b0364edd1ffb512ced9e670b0

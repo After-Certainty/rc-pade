@@ -1,0 +1,6 @@
+release:
+  id: rc-pade-experiment-003
+  boto3: 1.43.80
+  botocore: 1.43.80
+  s3transfer: 0.19.2
+  role: rc-pade-source-to-session
