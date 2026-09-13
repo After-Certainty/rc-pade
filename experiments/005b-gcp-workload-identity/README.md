@@ -187,7 +187,9 @@ Do **not** invent a PADE “Coder auth” mode for this path.
 
 ## 9. Recommended Experiment 005C
 
-Dogfood a minimal Google `TokenSource` against a local/dev PADE broker configured for Google OIDC (`requireRepoURLs: false`, subject = this SA’s `sub`), proving end-to-end `Token(ctx, audience)` → Bearer → broker verify/authorize for a **dummy capability** — still **without** AWS fulfillment, S3 provisioning, or broadening workspace credentials.
+**Completed** in [Experiment 005C](../005c-deployed-pade/): PADE v0.3.0 added a GCE `TokenSource` and multi-issuer broker support; the production Cloud Run broker was upgraded; this GCE-backed Coder workspace resolved real `github.repo.read` Material via `broker.identity: gce` without durable workspace credentials.
+
+Earlier local dogfood (multi-issuer broker + GCE mint) and the deployed validation are both recorded there. 005B itself remains the identity-only proof.
 
 ## 10. Final result
 
