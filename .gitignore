@@ -4,3 +4,4 @@ rc-pade
 /.work/
 experiments/004-coder-workspace/generated/
 experiments/005-coder-identity-discovery/generated/
+experiments/005b-gcp-workload-identity/generated/

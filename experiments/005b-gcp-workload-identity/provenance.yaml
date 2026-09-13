@@ -1,0 +1,10 @@
+pade:
+  repository: https://github.com/After-Certainty/pade.git
+  tag: v0.2.1
+  commit: d50174a2696743db3879dc98615801f5ad8d462a
+experiment:
+  id: 005b
+  name: gcp-workload-identity
+  testAudience: https://pade-broker.example
+  googleJwksURL: https://www.googleapis.com/oauth2/v3/certs
+  metadataIdentityPath: /computeMetadata/v1/instance/service-accounts/default/identity
