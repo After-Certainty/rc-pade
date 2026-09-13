@@ -1,0 +1,12 @@
+pade:
+  repository: https://github.com/After-Certainty/pade.git
+  tag: v0.3.0
+  commit: 0467ed2
+experiment:
+  id: 005c
+  name: deployed-pade
+  brokerEndpoint: https://pade-broker-754719312452.us-central1.run.app
+  brokerAudience: https://pade-broker-754719312452.us-central1.run.app
+  identity: gce
+  capability: github.repo.read
+  githubReadProbe: After-Certainty/after-certainty
