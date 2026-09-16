@@ -1,0 +1,36 @@
+# Experiment 006 — composed rc-demos Profile → rc-pade interoperability.
+# Temporary rc-demos pin: fork PR head until runtimeconditions/rc-demos#2 merges.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: experiment/006-rc-demos-dev-container
+rcDemos:
+  # Temporary: ksteffe fork at the exact tested commit (not a moving branch).
+  # After https://github.com/runtimeconditions/rc-demos/pull/2 merges, retarget
+  # repository to https://github.com/runtimeconditions/rc-demos.git and update commit.
+  repository: https://github.com/ksteffe/rc-demos.git
+  commit: 13a85bd4221797c94e209fad576a9d4ab89522f3
+  upstreamPR: https://github.com/runtimeconditions/rc-demos/pull/2
+  composeScript: dev-container-profile/scripts/compose-dev-container-profile.sh
+  artifact: artifacts/dev-container.profile.yaml
+extensions:
+  repository: https://github.com/runtimeconditions/extensions.git
+  commit: 7a08c8b9cc298c2c4a84b32d7cad2c3d813f97a7
+goRcProfiler:
+  repository: https://github.com/runtimeconditions/go-rc-profiler.git
+  commit: 5d2e860e48842b89ec83414123a7e59228f61d36
+projection:
+  policy: experiments/006-rc-demos-dev-container/policy.yaml
+  s3OnlyPolicyForFirstObservation: examples/s3-put-object/policy.yaml
+  outsidePADEField: outsidePADE
+evidence:
+  firstIncompatibilityS3Policy: "no projection rule matches api/http"
+  afterClassificationPolicy: "condition source_control/git has no operations; the initial experiment only projects operation-backed conditions"
+  rcPadeAccepted: false
+  generatedArtifacts: experiments/006-rc-demos-dev-container/generated/
+experiment:
+  id: "006"
+  name: rc-demos-dev-container
+  phase: interoperability-evidence
+  liveFulfillment: false
+  sourceControlProjectionDesigned: false

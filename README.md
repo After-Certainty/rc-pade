@@ -101,4 +101,4 @@ Keeping that opinion here lets both contracts evolve independently and makes the
 
 Very early experiment. The policy format (`rc-pade.local/v1alpha1`) is local to this repository and deliberately provisional.
 
-Interoperability proofs live under [`experiments/`](experiments/), from minimal RC→session fixtures through Coder/GCE identity and deployed PADE broker fulfillment (005C). See the [experiment index](experiments/README.md).
+Interoperability proofs live under [`experiments/`](experiments/), from minimal RC→session fixtures through Coder/GCE identity (005C), composed rc-demos Profile consumption (006), and deferred AWS work (007). See the [experiment index](experiments/README.md).

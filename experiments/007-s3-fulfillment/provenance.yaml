@@ -1,0 +1,62 @@
+# Baseline preparation pins for Experiment 007 (formerly Experiment 006 AWS baseline).
+# Original generation-chain validate/plan: Experiment 004 PADE pin (v0.2.1).
+# Follow-up check: temporary PADE v0.3.0 binary against the same generated session.
+# Historical experiment provenance files (003/004/005C) were not rewritten.
+# Renumbered to 007 when Experiment 006 became rc-demos composition interoperability.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  commit: 10cc1867a884736fb7a140e867755702d16c76a8
+  # Branch at original baseline recording; directory later renumbered to 007.
+  branch: experiment/006-s3-fulfillment
+  renumberedTo: "007"
+  renumberedDirectory: experiments/007-s3-fulfillment
+runtimeConditions:
+  sdkAuthorshipDiscovery:
+    repository: https://github.com/runtimeconditions/sdk-authorship-discovery.git
+    commit: 2b54b1230afc6075986b888701ef1b5c91c9ec4b
+  extensions:
+    repository: https://github.com/runtimeconditions/extensions.git
+    commit: e4c228ebab54c294783059772e973a665fc5f3f5
+  pythonProfiler:
+    repository: https://github.com/runtimeconditions/python-rc-profiler.git
+    commit: 3c882dbc7427f4c13bd127bc13069e11fc548e67
+awsSdk:
+  boto3: 1.43.80
+  botocore: 1.43.80
+  s3transfer: 0.19.2
+fixture:
+  experiment003Path: experiments/003-source-to-session/app/storage.py
+  upstreamPath: s3/python/direct-client/src/s3_direct_client/storage.py
+  sourceBlob: 81c18cc1a076b5a1f2968fe56a2efd4ef9c5d105
+projection:
+  policy: examples/s3-put-object/policy.yaml
+  expectedSession: experiments/002-real-rc-profile/expected-pade.yaml
+  generatedArtifacts: experiments/004-coder-workspace/generated/
+pade:
+  # Original baseline validate/plan (Experiment 004 documented path).
+  repository: https://github.com/After-Certainty/pade.git
+  tag: v0.2.1
+  commit: d50174a2696743db3879dc98615801f5ad8d462a
+padeFollowUpCheck:
+  # Same generated DevelopmentSession; temporary binary matching 005C substrate.
+  tag: v0.3.0
+  commit: 0467ed2
+  binary: /tmp/pade-deployed-gce-8V1f9j/pade
+  versionOutput: "pade version v0.3.0 (0467ed2, built 2026-09-13T02:26:11Z)"
+  session: experiments/004-coder-workspace/generated/development-session.yaml
+  validate: ok
+  plan:
+    capability: aws.s3.bucket.write
+    bound: false
+    status: unbound
+pade005cSubstrate:
+  # Deployed fulfillment pin from Experiment 005C (matches follow-up binary).
+  tag: v0.3.0
+  commit: 0467ed2
+experiment:
+  id: "007"
+  name: s3-fulfillment
+  phase: baseline-preparation
+  capability: aws.s3.bucket.write
+  liveS3: false

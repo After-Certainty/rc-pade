@@ -31,6 +31,13 @@ func Project(profile model.RuntimeConditionsProfile, policy model.ProjectionPoli
 		if err != nil {
 			return model.DevelopmentSession{}, err
 		}
+		if rule.OutsidePADE {
+			if len(rule.Operations) > 0 {
+				return model.DevelopmentSession{}, fmt.Errorf("projection rule for %s/%s sets outsidePADE and operations; choose one classification", condition.Kind, condition.Interface.Type)
+			}
+			// Explicitly classified outside PADE: accept, emit no capability.
+			continue
+		}
 		if len(condition.Interface.Operations) == 0 {
 			return model.DevelopmentSession{}, fmt.Errorf("condition %s/%s has no operations; the initial experiment only projects operation-backed conditions", condition.Kind, condition.Interface.Type)
 		}
