@@ -1,6 +1,6 @@
-# Experiment 006 — S3 fulfillment (baseline preparation)
+# Experiment 007 — S3 fulfillment (baseline preparation)
 
-**Status: baseline preparation only — Experiment 006 is not complete.**
+**Status: baseline preparation only — Experiment 007 is not complete.**
 
 This record prepares the RC → rc-pade → generated `DevelopmentSession` → PADE validate/plan baseline for later real S3 fulfillment. It does **not** claim live S3 access, AWS provisioning, Google→AWS federation, or broker-side AWS fulfillment.
 
@@ -15,13 +15,13 @@ Can the existing documented source → Runtime Conditions profiler → rc-pade �
 | [003](../003-source-to-session/) | Ordinary boto3 source → RC profiler → rc-pade → session |
 | [004](../004-coder-workspace/) | Same chain + PADE validate/plan inside Coder |
 | [005C](../005c-deployed-pade/) | Deployed multi-issuer broker fulfills `github.repo.read` for GCE identity |
-| **006 baseline (this)** | Re-confirmed S3 session generation + validate/plan; remaining AWS work deferred |
+| **007 baseline (this)** | Re-confirmed S3 session generation + validate/plan; remaining AWS work deferred |
 
 ## Commands run
 
 ### Original baseline (PADE v0.2.1)
 
-From repository root on branch `experiment/006-s3-fulfillment`:
+From repository root (originally on branch `experiment/006-s3-fulfillment`; evidence preserved after renumbering to 007):
 
 ```sh
 bash experiments/004-coder-workspace/run.sh
@@ -122,7 +122,7 @@ None for generation/validate/plan. The following were **intentionally not** atte
 
 Host note: `python3-venv` was required for the documented Experiment 003/004 scripts and was installed on this workspace before re-running the chain.
 
-## Remaining work (Experiment 006 completion)
+## Remaining work (Experiment 007 completion)
 
 ```text
 AWS bucket + role setup
@@ -134,7 +134,11 @@ broker-side AWS fulfillment for aws.s3.bucket.write
 live S3 execution via ordinary application code
 ```
 
-005C already validated GCE identity against the deployed multi-issuer broker for `github.repo.read`. Completing 006 should reuse that identity substrate and extend fulfillment to S3—not re-prove GCE metadata identity.
+005C already validated GCE identity against the deployed multi-issuer broker for `github.repo.read`. Completing 007 should reuse that identity substrate and extend fulfillment to S3—not re-prove GCE metadata identity.
+
+## Renumbering note
+
+This AWS baseline was originally recorded as Experiment 006. It was moved to Experiment 007 so Experiment 006 could cover composed rc-demos → rc-pade interoperability. Historical evidence (commands, versions, validate/plan results) is preserved; only numbering and directory name changed.
 
 ## Boundary
 

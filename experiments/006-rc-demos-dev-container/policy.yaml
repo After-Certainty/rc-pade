@@ -1,0 +1,22 @@
+# Experiment 006 projection policy for the composed rc-demos Profile.
+#
+# Classification uses kind + interfaceType only (not condition instance names).
+# outsidePADE is an explicit acceptance that emits no capability — distinct from
+# an unmatched/unknown condition, which still fails closed.
+apiVersion: rc-pade.local/v1alpha1
+kind: ProjectionPolicy
+rules:
+  - match:
+      kind: api
+      interfaceType: http
+    outsidePADE: true
+  - match:
+      kind: google.analytics
+      interfaceType: web
+    outsidePADE: true
+  - match:
+      kind: source_control
+      interfaceType: git
+    # PADE-relevant for this experiment (GitHub source-control authority).
+    # No operation mappings yet: the current projector still expects
+    # interface.operations[].name, while the composed Profile uses access[].

@@ -1,12 +1,16 @@
-# Baseline preparation pins for Experiment 006.
+# Baseline preparation pins for Experiment 007 (formerly Experiment 006 AWS baseline).
 # Original generation-chain validate/plan: Experiment 004 PADE pin (v0.2.1).
 # Follow-up check: temporary PADE v0.3.0 binary against the same generated session.
 # Historical experiment provenance files (003/004/005C) were not rewritten.
+# Renumbered to 007 when Experiment 006 became rc-demos composition interoperability.
 
 rcPade:
   repository: https://github.com/After-Certainty/rc-pade.git
   commit: 10cc1867a884736fb7a140e867755702d16c76a8
+  # Branch at original baseline recording; directory later renumbered to 007.
   branch: experiment/006-s3-fulfillment
+  renumberedTo: "007"
+  renumberedDirectory: experiments/007-s3-fulfillment
 runtimeConditions:
   sdkAuthorshipDiscovery:
     repository: https://github.com/runtimeconditions/sdk-authorship-discovery.git
@@ -51,7 +55,7 @@ pade005cSubstrate:
   tag: v0.3.0
   commit: 0467ed2
 experiment:
-  id: "006"
+  id: "007"
   name: s3-fulfillment
   phase: baseline-preparation
   capability: aws.s3.bucket.write
