@@ -1,0 +1,39 @@
+# Experiment 008 — opaque interface fields + bounded field matcher for source_control/git.
+# Reuses Experiment 006 provenance pins for the real composed rc-demos Profile.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: experiment/008-rc-field-projection
+rcDemos:
+  # Temporary: ksteffe fork at the exact tested commit (same pin as Experiment 006).
+  # After https://github.com/runtimeconditions/rc-demos/pull/2 merges, retarget
+  # repository to https://github.com/runtimeconditions/rc-demos.git and update commit.
+  repository: https://github.com/ksteffe/rc-demos.git
+  commit: 13a85bd4221797c94e209fad576a9d4ab89522f3
+  upstreamPR: https://github.com/runtimeconditions/rc-demos/pull/2
+  composeScript: dev-container-profile/scripts/compose-dev-container-profile.sh
+  artifact: artifacts/dev-container.profile.yaml
+extensions:
+  repository: https://github.com/runtimeconditions/extensions.git
+  commit: 7a08c8b9cc298c2c4a84b32d7cad2c3d813f97a7
+  sourceControlExtensionURI: https://runtimeconditions.io/extensions/source-control/0.1.0/runtimeconditions.extension.yaml
+goRcProfiler:
+  repository: https://github.com/runtimeconditions/go-rc-profiler.git
+  commit: 5d2e860e48842b89ec83414123a7e59228f61d36
+projection:
+  policy: experiments/008-rc-field-projection/policy.yaml
+  reading: independent-access-translations
+  accessMapping:
+    fetch: github.repo.read
+    pull: github.repo.read
+    push: github.repo.write
+    clone: github.repo.read
+evidence:
+  priorExperiment: experiments/006-rc-demos-dev-container/
+  designDoc: docs/rc-projection-policy-design.md
+experiment:
+  id: "008"
+  name: rc-field-projection
+  phase: projection-hypothesis
+  liveFulfillment: false
+  hypothesis: opaque-interface-fields-plus-bounded-field-matcher
