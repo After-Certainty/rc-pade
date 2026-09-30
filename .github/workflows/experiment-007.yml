@@ -1,0 +1,20 @@
+name: experiment-007-aws-bootstrap
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/007-s3-fulfillment/**'
+      - '.github/workflows/experiment-007.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  aws-scripts-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Offline checks (no AWS credentials, no AWS calls)
+        run: bash experiments/007-s3-fulfillment/scripts/test-local.sh
