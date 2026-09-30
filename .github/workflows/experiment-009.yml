@@ -1,0 +1,48 @@
+name: experiment-009-rc-validated-projection
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/009-rc-validated-projection/**'
+      - 'experiments/008-rc-field-projection/policy.yaml'
+      - 'cmd/**'
+      - 'internal/**'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/experiment-009.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rc-validated-projection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26.6'
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            experiments/009-rc-validated-projection/rcvalidate/go.sum
+      - name: Check rcvalidate module
+        working-directory: experiments/009-rc-validated-projection/rcvalidate
+        env:
+          GOTOOLCHAIN: auto
+        run: |
+          go vet ./...
+          test -z "$(gofmt -l .)"
+      - name: Run Experiment 009
+        env:
+          RC_PADE_EXPERIMENT_WORK: ${{ runner.temp }}/rc-pade-experiment-009
+        run: bash experiments/009-rc-validated-projection/run.sh
+      - name: Upload generated experiment evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: experiment-009-generated-artifacts
+          if-no-files-found: warn
+          path: experiments/009-rc-validated-projection/generated/
