@@ -29,6 +29,14 @@ run = "bash experiments/007-s3-fulfillment/scripts/show-aws.sh"
 description = "Experiment 007: conservative teardown of AWS resources (mutates AWS)"
 run = "bash experiments/007-s3-fulfillment/scripts/teardown-aws.sh"
 
+[tasks."007:check-gce-aws"]
+description = "Experiment 007: GCE identity preflight for AWS federation (mints a metadata ID token; no AWS calls)"
+run = "bash experiments/007-s3-fulfillment/scripts/check-gce-aws.sh"
+
+[tasks."007:test-gce-aws"]
+description = "Experiment 007: live GCE -> AWS STS -> S3 PutObject federation proof (requires RC_PADE_007_ROLE_ARN)"
+run = "bash experiments/007-s3-fulfillment/scripts/test-gce-aws.sh"
+
 [tasks."007:test-scripts"]
 description = "Experiment 007: offline checks for AWS scripts (no AWS calls)"
 run = "bash experiments/007-s3-fulfillment/scripts/test-local.sh"
