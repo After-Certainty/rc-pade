@@ -1,8 +1,10 @@
 # Experiment 007 — S3 fulfillment (baseline preparation)
 
-**Status: baseline preparation + AWS bootstrap tooling — Experiment 007 is not complete.**
+**Status: baseline preparation + AWS bootstrap (Phase 1) + direct GCE → AWS federation proof (Phase 2) — Experiment 007 is not complete.**
 
 The AWS bootstrap phase (see [AWS bootstrap phase](#aws-bootstrap-phase)) adds operator-side scripts that prepare AWS for a later federation test. It does not exercise federation or write to S3.
+
+The GCE → AWS federation phase (see [Phase 2](#phase-2--gce-workload-identity--aws-sts--s3-putobject)) proves, live from the GCE-backed Coder workspace, that the GCE workload identity federates directly to the Phase 1 role and exercises exactly the narrow S3 authority the workload needs. No PADE broker is involved; broker-side AWS fulfillment is Phase 3.
 
 This record prepares the RC → rc-pade → generated `DevelopmentSession` → PADE validate/plan baseline for later real S3 fulfillment. It does **not** claim live S3 access, AWS provisioning, Google→AWS federation, or broker-side AWS fulfillment.
 
@@ -19,6 +21,7 @@ Can the existing documented source → Runtime Conditions profiler → rc-pade �
 | [005C](../005c-deployed-pade/) | Deployed multi-issuer broker fulfills `github.repo.read` for GCE identity |
 | **007 baseline (this)** | Re-confirmed S3 session generation + validate/plan; remaining AWS work deferred |
 | **007 AWS bootstrap (this)** | Reproducible operator-side S3 bucket + narrow Google web-identity IAM role; federation deferred to the next PR |
+| **007 GCE → AWS federation (this)** | GCE metadata identity → STS `AssumeRoleWithWebIdentity` → temporary credentials → ordinary boto3 `PutObject`; wrong audience, outside-prefix write, and `ListObjectsV2` rejected |
 
 ## Commands run
 
@@ -136,6 +139,8 @@ broker-side AWS fulfillment for aws.s3.bucket.write
       ↓
 live S3 execution via ordinary application code
 ```
+
+Progress: "AWS bucket + role setup" is done (Phase 1, PR #13). "Google → AWS federation for the GCE workload identity" and live `PutObject` via ordinary application code are proven directly, without the broker (Phase 2). "Broker-side AWS fulfillment" remains (Phase 3).
 
 005C already validated GCE identity against the deployed multi-issuer broker for `github.repo.read`. Completing 007 should reuse that identity substrate and extend fulfillment to S3—not re-prove GCE metadata identity.
 
@@ -342,6 +347,139 @@ From the GCE-backed Coder workspace:
 5. Negative checks: writes outside `experiment-007/` and non-`PutObject` actions are denied; a token for a different audience is rejected.
 6. Then continue with broker-side AWS fulfillment for `aws.s3.bucket.write`, as listed in [Remaining work](#remaining-work-experiment-007-completion).
 
+Items 1–5 are done in [Phase 2](#phase-2--gce-workload-identity--aws-sts--s3-putobject). Item 6 is Phase 3.
+
+## Phase 2 — GCE workload identity → AWS STS → S3 PutObject
+
+**Completing this phase does not complete Experiment 007.** It isolates and proves one substrate layer, with no PADE broker involved.
+
+```text
+Phase 1
+operator workstation
+    ↓
+AWS bucket + role bootstrap
+DONE — PR #13
+
+Phase 2
+GCE workload identity
+    ↓
+AWS STS AssumeRoleWithWebIdentity
+    ↓
+temporary credentials
+    ↓
+ordinary boto3 PutObject
+DONE — this phase
+
+Phase 3
+GCE workload identity
+    ↓
+PADE broker
+    ↓
+aws.s3.bucket.write provider
+    ↓
+AWS STS
+    ↓
+ordinary application
+LATER — pade-broker-deployment
+```
+
+### Question
+
+Can the existing GCE-backed Coder workload identity assume the narrow Phase 1 role using `AssumeRoleWithWebIdentity`, obtain temporary AWS credentials, and use them to execute the ordinary S3 `PutObject` workload that Runtime Conditions discovered earlier?
+
+### What this phase proves
+
+Google/GCE workload identity can directly federate to AWS and exercise the exact narrow S3 authority required by the Experiment 007 workload: `s3:PutObject` under `experiment-007/` succeeds, and a wrong audience, a write outside the prefix, and a non-`PutObject` S3 action are all rejected.
+
+### What this phase does not prove
+
+- broker-side AWS fulfillment;
+- PADE resolution of `aws.s3.bucket.write`;
+- a full RC → rc-pade → broker → S3 vertical slice;
+- generic AWS support in PADE;
+- generic cloud federation support in Runtime Conditions.
+
+### Tasks
+
+Scripts live in [`scripts/`](scripts/); `mise.toml` only wraps them.
+
+| Task | Script | Effect |
+|------|--------|--------|
+| `mise run 007:check-gce-aws` | `check-gce-aws.sh` → `gce_aws.py check` | Refuses ambient AWS credentials; validates config; checks GCE metadata and the attached service account; mints one metadata ID token for `RC_PADE_007_AUDIENCE` and inspects safe claims; checks `RC_PADE_007_ROLE_ARN` syntax. **No STS or S3 calls.** Writes gitignored `generated/gce-aws-check.json` |
+| `mise run 007:test-gce-aws` | `test-gce-aws.sh` → `gce_aws.py test` | Live experiment in one process: identity checks, STS exchange, caller-identity confirmation, ordinary `storage.upload` PutObject, three negative checks. Writes gitignored `generated/gce-aws-federation.json` |
+| `mise run 007:test-scripts` | `test-local.sh` (+ `test_gce_aws.py`) | Offline only: syntax, shellcheck if present, static safety guards, unit tests, wrapper refusals |
+
+### Configuration
+
+| Variable | Default | Meaning |
+|----------|---------|---------|
+| `AWS_REGION` | `us-east-1` | STS/S3 region (`aws configure` and profiles are never consulted) |
+| `RC_PADE_007_BUCKET` | `after-certainty-rc-pade-007-1abcdf` | Phase 1 bucket |
+| `RC_PADE_007_AUDIENCE` | `https://rc-pade-007.after-certainty.aws` | Exact audience requested from GCE metadata and pinned by the trust policy's `oaud` |
+| `RC_PADE_007_ROLE_ARN` | **none — required** | `arn:aws:iam::<account>:role/pade-experiment-007-s3-write`, supplied to the workspace by the operator. Never guessed, never committed |
+
+If `RC_PADE_007_ROLE_ARN` is missing, `007:test-gce-aws` stops before any metadata, STS, or S3 call with `RC_PADE_007_ROLE_ARN must be supplied`.
+
+```sh
+export RC_PADE_007_ROLE_ARN=arn:aws:iam::<account>:role/pade-experiment-007-s3-write
+mise run 007:check-gce-aws
+mise run 007:test-gce-aws
+```
+
+`007:test-gce-aws` creates a gitignored venv at `.work/experiment-007-gce-aws/venv` with the boto3/botocore/s3transfer versions already pinned in this experiment's provenance.
+
+### How authority is isolated
+
+- **Ambient credentials refused.** Both wrappers and the Python harness refuse to run if `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`, `AWS_SECURITY_TOKEN`, or `AWS_PROFILE` is present (names reported, values never read or printed).
+- **No fallback.** Before the exchange the harness points `AWS_CONFIG_FILE` / `AWS_SHARED_CREDENTIALS_FILE` at `/dev/null`, disables the EC2 metadata provider, removes web-identity/container provider variables, and asserts that boto3's default chain resolves **no** credentials.
+- **Token in memory only.** The Google ID token is fetched in-process from `http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity` (`Metadata-Flavor: Google`, `format=full`, no proxy). It is never printed, logged, written to disk, placed in argv or a shell variable, or included in errors. No `aws` CLI is used.
+- **Unsigned STS call.** `AssumeRoleWithWebIdentity` is made with a botocore client using `signature_version=UNSIGNED`, so no pre-existing AWS credentials exist or are needed. Session duration is 900s.
+- **Ordinary chain for the workload.** The temporary credentials are placed only in the harness process's environment (boto3's standard environment provider; recorded `workloadCredentialSource: env`). The unmodified [`experiments/003-source-to-session/app/storage.py`](../003-source-to-session/app/storage.py) `upload()` then calls `boto3.client("s3").put_object(...)`. No subprocess is started after the credentials exist; they are removed from the environment before exit and never written anywhere.
+- **Claims are inspected, not verified.** Locally decoded JWT claims are inspection only. AWS STS accepting the correct-audience token (and rejecting the wrong-audience one) is the verification evidence.
+
+### Live run (recorded)
+
+Run from the GCE-backed Coder workspace on 2026-09-30 (UTC) at rc-pade commit `c625114173da74cda99c6033b0bd1cb462130932` (clean worktree), with only `RC_PADE_007_ROLE_ARN` supplied. Summary from gitignored `generated/gce-aws-federation.json` (account ID redacted; numeric Google subject never recorded):
+
+| Fact | Observation |
+|------|-------------|
+| Ambient AWS credential variables | none; `~/.aws` absent; boto3 default chain resolved no credentials before STS |
+| GCE environment | metadata reachable, `Metadata-Flavor: Google`; project `after-certainty`, zone `us-central1-a` |
+| Attached service account | `pade-coder-workspace@after-certainty.iam.gserviceaccount.com` (matches expected) |
+| Token `iss` | `https://accounts.google.com` |
+| Token `aud` | `https://rc-pade-007.after-certainty.aws` (matches configured) |
+| `sub` / `azp` | both present; **`azp == sub`: true** (values not recorded) |
+| Token `email` claim | expected service account; lifetime 3600s |
+| STS `AssumeRoleWithWebIdentity` | **accepted**; provider `accounts.google.com`; STS subject matches token `sub` |
+| Assumed role | `arn:aws:sts::<account>:assumed-role/pade-experiment-007-s3-write/rc-pade-007-gce-20260930T031703Z` |
+| Credential expiration | `2026-09-30T03:32:03Z` (900s session) |
+| `GetCallerIdentity` with temporary credentials | same assumed-role ARN; credential source `env` |
+| Positive `PutObject` (`storage.upload`) | **succeeded**: `s3://after-certainty-rc-pade-007-1abcdf/experiment-007/gce-federation-proof.txt`, ETag `"91fce052dd1a8ce9fbdf16b0bc8a270d"` |
+| A. Wrong audience `https://rc-pade-007-wrong-audience.after-certainty.aws` | **rejected** by STS (`AccessDenied`) |
+| B. `PutObject` `experiment-007-negative/should-not-write.txt` | **denied** (`AccessDenied`) |
+| C. `ListObjectsV2` on `experiment-007/` | **denied** (`AccessDenied`) |
+| Result | **passed** |
+
+An earlier identical run at commit `1ba4f7c` also passed; the harness was then changed only to avoid leaving `__pycache__/` in Experiment 003's app directory, and the run above was repeated to record final evidence.
+
+The proof object remains in the bucket for operator inspection; the role has no `GetObject`/`DeleteObject`, and `007:teardown-aws` removes objects under `experiment-007/`. No IAM permissions or trust policy were changed.
+
+### Safety invariants observed
+
+- No AWS IAM users, access keys, `aws login`, AWS profiles, or durable AWS credentials in the workspace.
+- No raw Google token in logs, output, evidence, files, argv, or shell tracing (`set -x` is never enabled; offline guards enforce it).
+- No AWS temporary credentials logged or persisted; `~/.aws/credentials` never written.
+- Generated evidence was checked for the account ID, JWT-shaped values, access-key IDs, and the numeric subject before writing and after the run.
+- CI runs only `test-local.sh`: no GCE, no token minting, no STS, no S3, no AWS credentials.
+
+### Resource ownership (unchanged)
+
+Runtime Conditions expresses `aws.s3` / `PutObject` demand; rc-pade projects `aws.s3.bucket.write`; the platform/operator owns the concrete bucket, IAM role, trust relationship, and temporary credential derivation. Neither the bucket nor the role appears in the Runtime Conditions Profile.
+
+### Why Experiment 007 is still not complete
+
+Phase 2 has the workload federate to AWS directly. The PADE target is for the **broker** to resolve `aws.s3.bucket.write` for the verified GCE identity and derive the scoped AWS credentials, so the ordinary application receives authority through PADE rather than through a harness. That requires an AWS S3 provider in the deployed broker — Phase 3, in [`After-Certainty/pade-broker-deployment`](https://github.com/After-Certainty/pade-broker-deployment).
+
 ## Renumbering note
 
 This AWS baseline was originally recorded as Experiment 006. It was moved to Experiment 007 so Experiment 006 could cover composed rc-demos → rc-pade interoperability. Historical evidence (commands, versions, validate/plan results) is preserved; only numbering and directory name changed.
@@ -350,4 +488,4 @@ This AWS baseline was originally recorded as Experiment 006. It was moved to Exp
 
 - Generated `DevelopmentSession` remains an untrusted request.
 - Unbound `aws.s3.bucket.write` in `pade plan` is success for **baseline preparation**, not fulfillment.
-- Do not treat this document as proof of live S3 access.
+- Do not treat the baseline or Phase 1 sections as proof of live S3 access. Phase 2 proves live S3 `PutObject` through **direct** GCE → AWS federation only, not through PADE fulfillment.

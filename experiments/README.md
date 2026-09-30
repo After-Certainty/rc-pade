@@ -12,7 +12,7 @@ Sequential interoperability proofs for Runtime Conditions ↔ PADE via `rc-pade`
 | 005B | [`005b-gcp-workload-identity`](005b-gcp-workload-identity/) | GCE metadata provides PADE-fit audience-bound Google identity |
 | 005C | [`005c-deployed-pade`](005c-deployed-pade/) | Deployed multi-issuer PADE broker fulfills `github.repo.read` for GCE identity |
 | 006 | [`006-rc-demos-dev-container`](006-rc-demos-dev-container/) | Composed rc-demos Profile + `outsidePADE` classification; source_control fails on operations model |
-| 007 | [`007-s3-fulfillment`](007-s3-fulfillment/) | **Baseline + AWS bootstrap tooling:** S3 `aws.s3.bucket.write` path prepared; operator scripts for bucket + Google web-identity role; federation and live S3 not done |
+| 007 | [`007-s3-fulfillment`](007-s3-fulfillment/) | **Baseline + AWS bootstrap + direct GCE → AWS federation:** S3 `aws.s3.bucket.write` path prepared; operator bucket + Google web-identity role; GCE identity → STS → ordinary boto3 `PutObject` proven live with negative boundaries; broker AWS fulfillment not done |
 | 008 | [`008-rc-field-projection`](008-rc-field-projection/) | Opaque interface fields + bounded matcher project live `source_control`/`git` → `github.repo.read` + `github.repo.write` |
 | 009 | [`009-rc-validated-projection`](009-rc-validated-projection/) | Upstream rc-extension-resolver gates the same Profile before unchanged rc-pade; RC-invalid vs platform-unsupported separated |
 
@@ -25,7 +25,7 @@ Sequential interoperability proofs for Runtime Conditions ↔ PADE via `rc-pade`
 005B GCE workload identity proof
 005C Deployed PADE multi-issuer fulfillment proof
 006  Composed rc-demos Profile → rc-pade (outsidePADE vs source_control operations mismatch)
-007  S3 fulfillment baseline (generation + validate/plan) + AWS bootstrap tooling (not federation, not live S3)
+007  S3 fulfillment baseline (generation + validate/plan) + AWS bootstrap + direct GCE → AWS STS → live PutObject (not broker fulfillment)
 008  Opaque fields + bounded matcher project source_control/git → GitHub capability intent
 009  Upstream RC validation gate → identical Profile bytes → unchanged rc-pade (cases A–D)
 ```
@@ -34,7 +34,7 @@ Sequential interoperability proofs for Runtime Conditions ↔ PADE via `rc-pade`
 
 **006** feeds a real composed rc-demos `RuntimeConditionsProfile` into `rc-pade` without inventing a fixture. After a minimal `outsidePADE` policy distinction, HTTP and Google Analytics are explicitly out of scope; `source_control`/`git` fails because the projector still requires `operations[].name`.
 
-**007** preserves the earlier AWS S3 fulfillment baseline (originally numbered 006) and adds operator-side AWS bootstrap scripts (`mise run 007:*-aws`) for a tagged bucket and a Google web-identity role limited to `s3:PutObject` on `experiment-007/*`. GCE → AWS federation, live S3, and broker AWS fulfillment remain unfinished.
+**007** preserves the earlier AWS S3 fulfillment baseline (originally numbered 006) and adds operator-side AWS bootstrap scripts (`mise run 007:*-aws`) for a tagged bucket and a Google web-identity role limited to `s3:PutObject` on `experiment-007/*`. Phase 2 (`mise run 007:*-gce-aws`) proves, from the GCE-backed Coder workspace and without any durable AWS credentials, that the GCE workload identity can call `AssumeRoleWithWebIdentity` and use the temporary role credentials for the ordinary Experiment 003 boto3 `PutObject`, while a wrong-audience token, an outside-prefix write, and `ListObjectsV2` are all rejected. Broker-side AWS fulfillment (Phase 3, `pade-broker-deployment`) remains unfinished.
 
 **008** preserves opaque extension interface fields and adds a bounded `require` / `project` / `cover` matcher. The same composed Profile now emits `github.repo.read` and `github.repo.write` under provisional Reading 1 policy, while HTTP/Analytics stay `outsidePADE` and legacy S3 `operations` projection remains.
 
