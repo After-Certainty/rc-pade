@@ -94,3 +94,80 @@ awsBootstrap:
     audience: https://rc-pade-007.after-certainty.aws
     trustPolicyMatchesConfig: true
     permissionsPolicyMatchesExpected: true
+gceAwsFederation:
+  # Phase 2 (PR 2 of 2 for the AWS work): direct GCE workload identity ->
+  # AWS STS -> temporary credentials -> ordinary boto3 PutObject, run from the
+  # GCE-backed Coder workspace. No PADE broker involved. AWS account ID,
+  # numeric Google subject, tokens, and credentials intentionally omitted.
+  phase: gce-aws-federation
+  baseMain: 41fd0c768e30a3ef2ee42b4a34345e883d6df897
+  branch: experiment/007-gce-aws-federation
+  scripts: experiments/007-s3-fulfillment/scripts/
+  tasks:
+    - "007:check-gce-aws"
+    - "007:test-gce-aws"
+  awsSdk:
+    boto3: 1.43.80
+    botocore: 1.43.80
+    s3transfer: 0.19.2
+  workload: experiments/003-source-to-session/app/storage.py
+  run:
+    dateUtc: "2026-09-30"
+    generatedAtUtc: "2026-09-30T03:17:03Z"
+    rcPadeCommit: c625114173da74cda99c6033b0bd1cb462130932
+    worktreeClean: true
+    evidence: experiments/007-s3-fulfillment/generated/gce-aws-federation.json # gitignored
+    gce:
+      project: after-certainty
+      zone: us-central1-a
+      serviceAccount: pade-coder-workspace@after-certainty.iam.gserviceaccount.com
+      serviceAccountMatchesExpected: true
+    googleToken:
+      issuer: https://accounts.google.com
+      audience: https://rc-pade-007.after-certainty.aws
+      audienceMatched: true
+      subPresent: true
+      azpPresent: true
+      azpEqualsSub: true
+      claimsLocallyDecodedOnly: true
+    aws:
+      region: us-east-1
+      bucket: after-certainty-rc-pade-007-1abcdf
+      role: pade-experiment-007-s3-write
+      roleArn: arn:aws:iam::<account>:role/pade-experiment-007-s3-write
+      ambientCredentialsPresent: false
+      defaultChainCredentialsBeforeSts: none
+    sts:
+      assumeRoleWithWebIdentity: accepted
+      assumedRoleArn: arn:aws:sts::<account>:assumed-role/pade-experiment-007-s3-write/rc-pade-007-gce-20260930T031703Z
+      sessionName: rc-pade-007-gce-20260930T031703Z
+      durationSeconds: 900
+      expiration: "2026-09-30T03:32:03Z"
+      callerIdentityMatchesAssumedRole: true
+      workloadCredentialSource: env
+    s3PutObject:
+      success: true
+      key: experiment-007/gce-federation-proof.txt
+      etag: '"91fce052dd1a8ce9fbdf16b0bc8a270d"'
+    negativeTests:
+      wrongAudience: {audience: "https://rc-pade-007-wrong-audience.after-certainty.aws", result: rejected, errorCode: AccessDenied}
+      outsidePrefixPutObject: {key: experiment-007-negative/should-not-write.txt, result: rejected, errorCode: AccessDenied}
+      listObjectsV2: {prefix: experiment-007/, result: rejected, errorCode: AccessDenied}
+    result: passed
+  safety:
+    durableAwsCredentialsUsed: false
+    accessKeysCreated: false
+    awsProfileUsed: false
+    rawGoogleTokenRecorded: false
+    temporaryCredentialsRecordedOrPersisted: false
+    iamChanged: false
+  proves: GCE workload identity can directly federate to AWS and exercise the exact narrow S3 authority required by the Experiment 007 workload
+  doesNotProve:
+    - broker-side AWS fulfillment
+    - PADE resolution of aws.s3.bucket.write
+    - full RC -> rc-pade -> broker -> S3 vertical slice
+    - generic AWS support in PADE
+    - generic cloud federation support in Runtime Conditions
+  next:
+    phase: broker-aws-fulfillment
+    repository: https://github.com/After-Certainty/pade-broker-deployment

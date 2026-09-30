@@ -37,15 +37,95 @@ else
   printf 'skip shellcheck (not installed)\n'
 fi
 
-# --- PR boundary guard ------------------------------------------------------
+# --- Phase 1 boundary guard ------------------------------------------------
 
-for f in "$SCRIPTS"/*.sh; do
-  [[ "$(basename "$f")" == test-local.sh ]] && continue
-  if grep -Eq 'assume-role-with-web-identity|create-access-key|metadata\.google\.internal|computeMetadata|AWS_SECRET_ACCESS_KEY' "$f"; then
-    fail "$(basename "$f") contains federation or credential handling reserved for PR 2"
+# The operator bootstrap scripts must stay free of federation and workload
+# credential handling; that belongs only to the Phase 2 GCE scripts.
+for f in lib.sh check-aws.sh bootstrap-aws.sh show-aws.sh teardown-aws.sh; do
+  if grep -Eq 'assume-role-with-web-identity|create-access-key|metadata\.google\.internal|computeMetadata|AWS_SECRET_ACCESS_KEY' "$SCRIPTS/$f"; then
+    fail "$f contains federation or credential handling reserved for the Phase 2 scripts"
   fi
 done
-ok "no web-identity exchange, metadata calls, or access-key handling in scripts"
+ok "no web-identity exchange, metadata calls, or access-key handling in Phase 1 scripts"
+
+# --- Phase 2 static safety guards -------------------------------------------
+
+phase2=("$SCRIPTS/gce-aws-lib.sh" "$SCRIPTS/check-gce-aws.sh" "$SCRIPTS/test-gce-aws.sh" "$SCRIPTS/gce_aws.py")
+for f in "$SCRIPTS"/*.sh; do
+  if grep -Eq '^[[:space:]]*set[[:space:]]+-[a-z]*x|set[[:space:]]+-o[[:space:]]+xtrace' "$f"; then
+    fail "$(basename "$f") enables shell tracing"
+  fi
+done
+for f in "${phase2[@]}"; do
+  if grep -Eq 'create-access-key|aws[[:space:]]+sts[[:space:]]+assume-role|access_token|\.aws/credentials|aws[[:space:]]+configure[[:space:]]+set|AWS_WEB_IDENTITY_TOKEN_FILE=' "$f"; then
+    fail "$(basename "$f") uses a forbidden credential mechanism"
+  fi
+done
+if grep -Eq 'print\([^)]*(token|wrong|creds|Credentials|AccessKeyId|SecretAccessKey|SessionToken)\b' "$SCRIPTS/gce_aws.py"; then
+  fail "gce_aws.py prints token or credential material"
+fi
+if grep -Eq 'logging\.basicConfig|set_stream_logger|boto3\.set_stream_logger' "$SCRIPTS/gce_aws.py"; then
+  fail "gce_aws.py enables SDK logging that could expose request bodies"
+fi
+grep -q 'signature_version=UNSIGNED' "$SCRIPTS/gce_aws.py" || fail "STS exchange must be unsigned (no pre-existing AWS credentials)"
+grep -q 'AWS_SHARED_CREDENTIALS_FILE"\] = os.devnull' "$SCRIPTS/gce_aws.py" || fail "shared credential files must be neutralized"
+ok "no tracing, CLI token exchange, credential files, or credential printing in Phase 2 scripts"
+
+# --- Phase 2 unit tests (stdlib only) ---------------------------------------
+
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s "$SCRIPTS" -p 'test_gce_aws.py' -q 2>&1 | sed 's/^/     /' ||
+  fail "gce_aws.py unit tests"
+ok "gce_aws.py unit tests"
+
+# --- Phase 2 wrappers refuse before any metadata, STS, or S3 call -----------
+
+ROLE_ARN_FAKE="arn:aws:iam::111122223333:role/pade-experiment-007-s3-write"
+# Unroutable metadata host plus an empty venv path: any attempt to go further
+# than preflight fails loudly instead of reaching GCE, AWS, or PyPI.
+phase2_env=(GCE_METADATA_HOST=127.0.0.1:9 RC_PADE_007_VENV="$EXP007_TMPDIR/no-venv"
+  RC_PADE_007_GENERATED_DIR="$EXP007_TMPDIR/generated"
+  HTTPS_PROXY=http://127.0.0.1:9 HTTP_PROXY=http://127.0.0.1:9)
+
+# expect_phase2_refusal <description> <script> <expected stderr substring> [VAR=value ...]
+expect_phase2_refusal() {
+  local desc="$1" script="$2" want="$3" rc=0 err
+  shift 3
+  err="$EXP007_TMPDIR/phase2.err"
+  env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u AWS_SESSION_TOKEN -u AWS_SECURITY_TOKEN \
+    -u AWS_PROFILE -u RC_PADE_007_ROLE_ARN "${phase2_env[@]}" "$@" \
+    bash "$SCRIPTS/$script" </dev/null >/dev/null 2>"$err" || rc=$?
+  ((rc == 2)) || fail "$desc: expected exit 2, got $rc ($(cat "$err"))"
+  grep -qF -- "$want" "$err" || fail "$desc: stderr missing '$want' ($(cat "$err"))"
+  [[ ! -e "$EXP007_TMPDIR/no-venv" ]] || fail "$desc: venv was created"
+  grep -q 'secret-value' "$err" && fail "$desc: credential value was printed"
+  ok "$desc"
+}
+
+for var in AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_PROFILE; do
+  expect_phase2_refusal "test-gce-aws refuses with $var set" test-gce-aws.sh "$var" \
+    "$var=secret-value" RC_PADE_007_ROLE_ARN="$ROLE_ARN_FAKE"
+  expect_phase2_refusal "check-gce-aws refuses with $var set" check-gce-aws.sh "$var" "$var=secret-value"
+done
+expect_phase2_refusal "test-gce-aws refuses without RC_PADE_007_ROLE_ARN" test-gce-aws.sh \
+  "RC_PADE_007_ROLE_ARN must be supplied"
+expect_phase2_refusal "test-gce-aws refuses a non-007 role ARN" test-gce-aws.sh "RC_PADE_007_ROLE_ARN" \
+  RC_PADE_007_ROLE_ARN="arn:aws:iam::111122223333:role/admin"
+expect_phase2_refusal "test-gce-aws refuses a malformed role ARN" test-gce-aws.sh "RC_PADE_007_ROLE_ARN" \
+  RC_PADE_007_ROLE_ARN="arn:aws:iam::1234:role/pade-experiment-007-s3-write"
+expect_phase2_refusal "check-gce-aws refuses an invalid bucket" check-gce-aws.sh "RC_PADE_007_BUCKET" \
+  RC_PADE_007_BUCKET="Bad_Bucket"
+expect_phase2_refusal "check-gce-aws refuses a wildcard audience" check-gce-aws.sh "RC_PADE_007_AUDIENCE" \
+  RC_PADE_007_AUDIENCE="https://*.example"
+
+# With valid config, check must stop at the (unreachable) metadata server and
+# must not call AWS: exit 1 with a bounded gce-metadata failure.
+rc=0
+env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u AWS_SESSION_TOKEN -u AWS_PROFILE \
+  "${phase2_env[@]}" RC_PADE_007_ROLE_ARN="$ROLE_ARN_FAKE" \
+  python3 "$SCRIPTS/gce_aws.py" check </dev/null >/dev/null 2>"$EXP007_TMPDIR/check.err" || rc=$?
+((rc == 1)) || fail "check with unreachable metadata: expected exit 1, got $rc"
+grep -q 'FAILED gce-metadata' "$EXP007_TMPDIR/check.err" || fail "check should fail at gce-metadata"
+ok "check-gce-aws with valid config stops at the metadata server"
 
 # --- policy rendering -------------------------------------------------------
 
