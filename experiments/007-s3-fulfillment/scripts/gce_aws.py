@@ -581,6 +581,7 @@ def cmd_test(_args) -> int:
         say("workload credential source", sts_facts["workloadCredentialSource"])
 
         # Positive proof: unmodified Experiment 003 application code.
+        sys.dont_write_bytecode = True  # keep Experiment 003's app directory untouched
         sys.path.insert(0, str(STORAGE_APP_DIR))
         import storage  # noqa: E402
 
