@@ -12,3 +12,23 @@ run = "go run ./cmd/rc-pade generate --profile examples/s3-put-object/runtime-co
 [tasks.check-demo]
 description = "Verify the demo output is stable"
 run = "go run ./cmd/rc-pade generate --profile examples/s3-put-object/runtime-conditions.yaml --policy examples/s3-put-object/policy.yaml | diff -u examples/s3-put-object/expected-pade.yaml -"
+
+[tasks."007:check-aws"]
+description = "Experiment 007: read-only AWS preflight"
+run = "bash experiments/007-s3-fulfillment/scripts/check-aws.sh"
+
+[tasks."007:bootstrap-aws"]
+description = "Experiment 007: create/reconcile S3 bucket and Google web-identity IAM role (mutates AWS)"
+run = "bash experiments/007-s3-fulfillment/scripts/bootstrap-aws.sh"
+
+[tasks."007:show-aws"]
+description = "Experiment 007: read-only summary of AWS resources"
+run = "bash experiments/007-s3-fulfillment/scripts/show-aws.sh"
+
+[tasks."007:teardown-aws"]
+description = "Experiment 007: conservative teardown of AWS resources (mutates AWS)"
+run = "bash experiments/007-s3-fulfillment/scripts/teardown-aws.sh"
+
+[tasks."007:test-scripts"]
+description = "Experiment 007: offline checks for AWS scripts (no AWS calls)"
+run = "bash experiments/007-s3-fulfillment/scripts/test-local.sh"

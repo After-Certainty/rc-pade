@@ -60,3 +60,37 @@ experiment:
   phase: baseline-preparation
   capability: aws.s3.bucket.write
   liveS3: false
+awsBootstrap:
+  # Operator-side AWS preparation tooling (PR 1 of 2). Tooling only: no
+  # resources or account-specific values are recorded here.
+  phase: aws-bootstrap
+  scripts: experiments/007-s3-fulfillment/scripts/
+  tasks:
+    - "007:check-aws"
+    - "007:bootstrap-aws"
+    - "007:show-aws"
+    - "007:teardown-aws"
+    - "007:test-scripts"
+  trust:
+    principal: accounts.google.com
+    action: sts:AssumeRoleWithWebIdentity
+    conditions:
+      accounts.google.com:aud: RC_PADE_007_GOOGLE_SUB # matches azp on GCE ID tokens
+      accounts.google.com:oaud: RC_PADE_007_AUDIENCE
+      accounts.google.com:sub: RC_PADE_007_GOOGLE_SUB
+  permissions:
+    action: s3:PutObject
+    resource: arn:aws:s3:::${RC_PADE_007_BUCKET}/experiment-007/*
+  accessKeysCreated: false
+  federationTested: false
+  liveS3: false
+  run:
+    # Account ID and numeric Google subject intentionally omitted.
+    dateUtc: "2026-09-30"
+    rcPadeCommit: 809ebdff95c8aaef6403ecf03c2b8f71cb80f16c
+    region: us-east-1
+    bucket: after-certainty-rc-pade-007-1abcdf
+    role: pade-experiment-007-s3-write
+    audience: https://rc-pade-007.after-certainty.aws
+    trustPolicyMatchesConfig: true
+    permissionsPolicyMatchesExpected: true
