@@ -1,0 +1,50 @@
+# Experiment 009 — upstream RC validation gate before unchanged rc-pade (cases A–D).
+# Reuses Experiment 008 provenance pins for the real composed rc-demos Profile.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: experiment/009-rc-validated-projection
+  productionCodeChanged: false
+rcDemos:
+  # Temporary: ksteffe fork at the exact tested commit (same pin as 006 and 008).
+  repository: https://github.com/ksteffe/rc-demos.git
+  commit: 13a85bd4221797c94e209fad576a9d4ab89522f3
+  composeScript: dev-container-profile/scripts/compose-dev-container-profile.sh
+  artifact: artifacts/dev-container.profile.yaml
+extensions:
+  repository: https://github.com/runtimeconditions/extensions.git
+  commit: 7a08c8b9cc298c2c4a84b32d7cad2c3d813f97a7
+goRcProfiler:
+  repository: https://github.com/runtimeconditions/go-rc-profiler.git
+  commit: 5d2e860e48842b89ec83414123a7e59228f61d36
+validator:
+  module: github.com/runtimeconditions/rc-extension-resolver
+  version: v0.0.0-20260929185940-91c46bf6bcc8
+  commit: 91c46bf6bcc8207475ade30a6f6c1d9ab810ac2e
+  goToolchain: go1.27.1
+  wrapper: experiments/009-rc-validated-projection/rcvalidate
+  resolveAllCopiedFrom: https://github.com/runtimeconditions/rc-admission-webhook/blob/91e97af8927e/internal/webhook/v1alpha1/runtimeconditionsprofile_webhook.go
+  description: current upstream implementation used by this experiment; not a full sixth-draft conformance validator
+projection:
+  baselinePolicy: experiments/008-rc-field-projection/policy.yaml
+  caseCPolicy: experiments/009-rc-validated-projection/policy-no-clone.yaml
+cases:
+  A: {validation: accepted, projection: [github.repo.read, github.repo.write]}
+  B: {access: [fetch, admin], validation: rejected, projection: not-invoked}
+  C: {access: [clone], validation: accepted, projection: failed-unsupported-clone}
+  D: {conditions: [api/http, google.analytics/web], validation: accepted, projection: outsidePADE}
+evidence:
+  generatedArtifacts: experiments/009-rc-validated-projection/generated/
+  # Observed in the recorded run; each harness run records its own chain under generated/cases/.
+  composedProfileSHA256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+experiment:
+  id: "009"
+  name: rc-validated-projection
+  phase: validation-gate
+  liveFulfillment: false
+  deferredTo010:
+    - ambiguous-kind-resolution
+    - explicit-extension-selectors
+    - provenance-fidelity
+    - cross-profile-semantic-substitution
+    - supported-extension-identity-gating
