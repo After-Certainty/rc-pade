@@ -171,3 +171,70 @@ gceAwsFederation:
   next:
     phase: broker-aws-fulfillment
     repository: https://github.com/After-Certainty/pade-broker-deployment
+brokerAwsFulfillment:
+  # Phase 3: GCE caller -> deployed PADE broker -> aws.s3.bucket.write ->
+  # Cloud Run runtime identity -> AWS STS -> temporary Material in the pade exec
+  # child -> ordinary boto3 PutObject. Live from the GCE-backed Coder workspace.
+  # AWS account ID, full role ARN, numeric Google subject, tokens, credentials,
+  # and broker log lines intentionally omitted.
+  phase: broker-aws-fulfillment
+  baseMain: 0ed684b0aaf640bf98e3763e3ff320c5fb8c7d52
+  branch: experiment/007-phase-3-evidence
+  padeBrokerDeployment:
+    repository: https://github.com/After-Certainty/pade-broker-deployment
+    masterCommit: efdbe8627f927440e147dd01b3094ab80e4b0a20
+    brokerUrl: https://pade-broker-754719312452.us-central1.run.app
+    brokerPade: {tag: v0.3.0, commit: 0467ed22034a7ae6a2e636a63a277bbd25d23263, source: versions.env}
+    deployedProvenanceObserved: false # Cloud Run describe denied to Coder SA
+  padeConsumer:
+    build: go install github.com/After-Certainty/pade/cmd/pade@v0.3.0
+    goVersionModuleLine: github.com/After-Certainty/pade v0.3.0
+    versionOutput: pade version dev # no release ldflags in plain go install
+  awsSdk:
+    boto3: 1.43.105
+  workload: experiments/003-source-to-session/app/storage.py
+  run:
+    dateUtc: "2026-09-30"
+    windowUtc: {start: "2026-09-30T04:33:25Z", end: "2026-09-30T04:37:13Z"}
+    evidence: experiments/007-s3-fulfillment/generated/broker-fulfillment.json # gitignored
+    gce:
+      project: after-certainty
+      zone: us-central1-a
+      serviceAccount: pade-coder-workspace@after-certainty.iam.gserviceaccount.com
+    callerToken:
+      issuer: https://accounts.google.com
+      audience: https://pade-broker-754719312452.us-central1.run.app
+      subPresent: true
+      claimsLocallyDecodedOnly: true
+    aws:
+      region: us-east-1
+      bucket: after-certainty-rc-pade-007-1abcdf
+      prefix: experiment-007/
+      role: pade-broker-experiment-007-s3-write
+      ambientCredentialsPresent: false
+      defaultChainCredentialsBeforePade: none
+    brokerResolve: {capability: aws.s3.bucket.write, result: authorized, childMaterialPresent: true, accessKeyTemporaryAsiaPrefix: true}
+    s3PutObject:
+      success: true
+      key: experiment-007/broker-fulfillment-proof.txt
+      etagPresent: true
+    negativeTests:
+      outsidePrefixPutObject: {key: experiment-007-negative/should-not-write.txt, result: rejected, errorCode: AccessDenied}
+      listObjectsV2: {bucket: after-certainty-rc-pade-007-1abcdf, result: rejected, errorCode: AccessDenied}
+      gceDisallowedCapability: {capability: google-analytics.read, result: "GCE caller denied google-analytics.read by broker policy", httpStatus: 403, error: not_authorized}
+    brokerLogSecretScan: unavailable # PERMISSION_DENIED for all log views from Coder identity
+    notLiveTested:
+      - unauthorized second GCE subject
+      - real Cursor subject requesting aws.s3.bucket.write
+    result: passed
+  safety:
+    durableAwsCredentialsUsed: false
+    iamChanged: false
+    brokerRedeployed: false
+    rawGoogleTokenRecorded: false
+    temporaryCredentialsRecordedOrPersisted: false
+  proves: a real GCE-backed Coder workload obtained aws.s3.bucket.write through the deployed PADE broker, with AWS federation performed by the broker's Cloud Run runtime identity, and ordinary boto3 PutObject succeeded while the tested broader S3 operations were denied
+  doesNotProve:
+    - generic AWS support in PADE
+    - provisioning by Runtime Conditions
+    - behavior for other callers (second GCE subject, Cursor)

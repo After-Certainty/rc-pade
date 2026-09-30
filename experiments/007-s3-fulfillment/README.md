@@ -1,12 +1,14 @@
-# Experiment 007 — S3 fulfillment (baseline preparation)
+# Experiment 007 — S3 fulfillment
 
-**Status: baseline preparation + AWS bootstrap (Phase 1) + direct GCE → AWS federation proof (Phase 2) — Experiment 007 is not complete.**
+**Status: DONE — baseline preparation + AWS bootstrap (Phase 1) + direct GCE → AWS federation proof (Phase 2) + broker-side AWS fulfillment (Phase 3).**
+
+The broker AWS fulfillment phase (see [Phase 3](#phase-3--gce-caller--deployed-pade-broker--aws-s3-putobject)) proves, live from the GCE-backed Coder workspace, that the deployed PADE broker authorizes `aws.s3.bucket.write` for the GCE caller and delivers temporary AWS Material, derived from the broker's own Cloud Run runtime identity, only to the `pade exec` child.
 
 The AWS bootstrap phase (see [AWS bootstrap phase](#aws-bootstrap-phase)) adds operator-side scripts that prepare AWS for a later federation test. It does not exercise federation or write to S3.
 
 The GCE → AWS federation phase (see [Phase 2](#phase-2--gce-workload-identity--aws-sts--s3-putobject)) proves, live from the GCE-backed Coder workspace, that the GCE workload identity federates directly to the Phase 1 role and exercises exactly the narrow S3 authority the workload needs. No PADE broker is involved; broker-side AWS fulfillment is Phase 3.
 
-This record prepares the RC → rc-pade → generated `DevelopmentSession` → PADE validate/plan baseline for later real S3 fulfillment. It does **not** claim live S3 access, AWS provisioning, Google→AWS federation, or broker-side AWS fulfillment.
+The baseline section below prepares the RC → rc-pade → generated `DevelopmentSession` → PADE validate/plan baseline. On its own the baseline does **not** claim live S3 access, AWS provisioning, Google→AWS federation, or broker-side AWS fulfillment. Those are covered by Phases 1–3.
 
 ## Question
 
@@ -22,6 +24,7 @@ Can the existing documented source → Runtime Conditions profiler → rc-pade �
 | **007 baseline (this)** | Re-confirmed S3 session generation + validate/plan; remaining AWS work deferred |
 | **007 AWS bootstrap (this)** | Reproducible operator-side S3 bucket + narrow Google web-identity IAM role; federation deferred to the next PR |
 | **007 GCE → AWS federation (this)** | GCE metadata identity → STS `AssumeRoleWithWebIdentity` → temporary credentials → ordinary boto3 `PutObject`; wrong audience, outside-prefix write, and `ListObjectsV2` rejected |
+| **007 broker AWS fulfillment (this)** | GCE caller → deployed PADE broker → `aws.s3.bucket.write` → Cloud Run runtime identity → STS → temporary Material in `pade exec` child → ordinary boto3 `PutObject`; outside-prefix write, `ListObjectsV2`, and GCE `google-analytics.read` denied |
 
 ## Commands run
 
@@ -140,7 +143,7 @@ broker-side AWS fulfillment for aws.s3.bucket.write
 live S3 execution via ordinary application code
 ```
 
-Progress: "AWS bucket + role setup" is done (Phase 1, PR #13). "Google → AWS federation for the GCE workload identity" and live `PutObject` via ordinary application code are proven directly, without the broker (Phase 2). "Broker-side AWS fulfillment" remains (Phase 3).
+Progress: "AWS bucket + role setup" is done (Phase 1, PR #13). "Google → AWS federation for the GCE workload identity" and live `PutObject` via ordinary application code are proven directly, without the broker (Phase 2, PR #14). "Broker-side AWS fulfillment", with live `PutObject` via ordinary application code consuming broker-delivered Material, is done (Phase 3). All four steps are complete.
 
 005C already validated GCE identity against the deployed multi-issuer broker for `github.repo.read`. Completing 007 should reuse that identity substrate and extend fulfillment to S3—not re-prove GCE metadata identity.
 
@@ -368,7 +371,7 @@ AWS STS AssumeRoleWithWebIdentity
 temporary credentials
     ↓
 ordinary boto3 PutObject
-DONE — this phase
+DONE — PR #14
 
 Phase 3
 GCE workload identity
@@ -380,7 +383,7 @@ aws.s3.bucket.write provider
 AWS STS
     ↓
 ordinary application
-LATER — pade-broker-deployment
+DONE — see Phase 3 below (provider in pade-broker-deployment)
 ```
 
 ### Question
@@ -476,9 +479,100 @@ The proof object remains in the bucket for operator inspection; the role has no 
 
 Runtime Conditions expresses `aws.s3` / `PutObject` demand; rc-pade projects `aws.s3.bucket.write`; the platform/operator owns the concrete bucket, IAM role, trust relationship, and temporary credential derivation. Neither the bucket nor the role appears in the Runtime Conditions Profile.
 
-### Why Experiment 007 is still not complete
+### Why Phase 2 alone did not complete Experiment 007
 
-Phase 2 has the workload federate to AWS directly. The PADE target is for the **broker** to resolve `aws.s3.bucket.write` for the verified GCE identity and derive the scoped AWS credentials, so the ordinary application receives authority through PADE rather than through a harness. That requires an AWS S3 provider in the deployed broker — Phase 3, in [`After-Certainty/pade-broker-deployment`](https://github.com/After-Certainty/pade-broker-deployment).
+Phase 2 has the workload federate to AWS directly. The PADE target is for the **broker** to resolve `aws.s3.bucket.write` for the verified GCE identity and derive the scoped AWS credentials, so the ordinary application receives authority through PADE rather than through a harness. That requires an AWS S3 provider in the deployed broker. The provider was added in [`After-Certainty/pade-broker-deployment`](https://github.com/After-Certainty/pade-broker-deployment) (#14), and the live proof is Phase 3 below.
+
+## Phase 3 — GCE caller → deployed PADE broker → AWS S3 PutObject
+
+```text
+GCE/Coder workload identity (caller)
+    ↓
+PADE consumer (pade exec)
+    ↓
+deployed PADE broker: verifies + authorizes the GCE caller
+    ↓
+aws.s3.bucket.write → deployment-owned AWS S3 provider
+    ↓
+Cloud Run runtime service-account identity
+    ↓
+Google metadata ID token for the AWS audience
+    ↓
+AWS STS AssumeRoleWithWebIdentity
+    ↓
+temporary AWS Material → pade exec child only
+    ↓
+ordinary boto3 PutObject
+DONE
+```
+
+### Live result
+
+A real GCE-backed Coder workload requested `aws.s3.bucket.write` through the deployed PADE broker. The broker authorized the caller, the deployment-owned provider federated Cloud Run runtime identity through AWS STS, temporary AWS Material reached only the scoped child, and ordinary boto3 PutObject succeeded while the tested broader S3 operations were denied.
+
+Two identities stay separate. The caller's GCE token authenticates **only** to the broker, with the broker URL as audience. The broker's Cloud Run runtime service account is the identity AWS trusts for the Phase 3 role `pade-broker-experiment-007-s3-write`, which is distinct from the Phase 2 role. The caller token is never presented to AWS.
+
+### What this phase does not prove
+
+- generic AWS support in PADE;
+- that Runtime Conditions performs provisioning;
+- behavior for other callers (an unauthorized second GCE subject, or Cursor).
+
+### Commands run
+
+From the GCE-backed Coder workspace, with explicit arguments (no `PADE_BINDINGS`):
+
+```sh
+pade exec \
+  --bindings /tmp/exp007/bindings.yaml \
+  -f /tmp/exp007/pade.yaml \
+  --capability aws.s3.bucket.write \
+  -- /tmp/exp007-venv/bin/python <child script>
+```
+
+- **PADE consumer:** `go install github.com/After-Certainty/pade/cmd/pade@v0.3.0` into `/tmp`. `go version -m` reports the module line `github.com/After-Certainty/pade v0.3.0`. `pade --version` reports `dev`, because plain `go install` carries no release ldflags.
+- **Bindings:** generated by pade-broker-deployment `scripts/print-agent-bindings-gce.sh` at `efdbe86`, with `PROJECT_ID=after-certainty PROJECT_NUMBER=754719312452`. `make` was not installed, and `gcloud projects describe` is denied to the Coder SA. Each capability uses `provider: broker, identity: gce`, with endpoint and audience set to the broker URL. For the GCE-policy negative test only, one temporary `google-analytics.read` broker entry was added.
+- **Manifest:** a temporary `DevelopmentSession` declaring `aws.s3.bucket.write` (write) and `google-analytics.read` (read). The same capability and access appear in the generated session from the baseline, but the live run used the temporary manifest rather than the generated file.
+- **Child:** the child used `/tmp/exp007-venv` (boto3 `1.43.105`). The positive test called the unmodified [`experiments/003-source-to-session/app/storage.py`](../003-source-to-session/app/storage.py) `upload()`.
+- None of the temporary files were committed, and none contain credentials.
+
+### Live run (recorded)
+
+Run on 2026-09-30, `04:33:25Z`–`04:37:13Z` UTC. The summary below is from the gitignored `generated/broker-fulfillment.json`. No account ID, full role ARN, numeric Google subject, tokens, credentials, or broker log lines are recorded.
+
+| Fact | Observation |
+|------|-------------|
+| pade-broker-deployment master | `efdbe8627f927440e147dd01b3094ab80e4b0a20` (includes #14) |
+| Broker URL | `https://pade-broker-754719312452.us-central1.run.app` |
+| Broker PADE (per `versions.env`, not observed live) | `v0.3.0` @ `0467ed22034a7ae6a2e636a63a277bbd25d23263` |
+| Ambient AWS credential variables | none of the 8 standard variables; `~/.aws` absent; `boto3.Session().get_credentials() is None` → `True` before PADE |
+| Caller | `pade-coder-workspace@after-certainty.iam.gserviceaccount.com`, project `after-certainty`, zone `us-central1-a` |
+| Caller token (locally decoded only) | `iss=https://accounts.google.com`; `aud` = broker URL; subject present; temp file mode 600, deleted after inspection |
+| Broker resolve `aws.s3.bucket.write` | **authorized**; `Injecting capabilities: aws.s3.bucket.write (broker)` |
+| Child Material | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`, `AWS_REGION`, `AWS_S3_BUCKET`, `AWS_S3_PREFIX` all present; access key has STS temporary `ASIA` prefix |
+| Platform binding (equality-checked in child) | bucket `after-certainty-rc-pade-007-1abcdf`, prefix `experiment-007/`, region `us-east-1` |
+| Positive `PutObject` (`storage.upload`) | **succeeded**: `experiment-007/broker-fulfillment-proof.txt`, ETag present |
+| A. `PutObject` `experiment-007-negative/should-not-write.txt` | **denied** (`AccessDenied`) |
+| B. `ListObjectsV2` on the bucket | **denied** (`AccessDenied`) |
+| C. GCE `google-analytics.read` | GCE caller denied `google-analytics.read` by broker policy: `broker resolve denied (http 403)`, and the child did not run. A direct resolve with the same caller identity returned `403 {"error":"not_authorized"}`. PADE v0.3.0 returns this only after token verification succeeds and policy denies. |
+| Result | **passed** |
+
+The proof object body contains only a marker line and a UTC timestamp. `deployment_git_sha` was omitted because deployed provenance could not be observed. The object remains in the bucket; `007:teardown-aws` removes objects under `experiment-007/`.
+
+### Checks not performed from the Coder identity
+
+| Check | Result |
+|-------|--------|
+| Cloud Run provenance (`gcloud run services describe pade-broker --project=after-certainty --region=us-central1`) | `PERMISSION_DENIED` on `run.services.get`. The deployed image, `DEPLOYMENT_GIT_SHA`, `PADE_VERSION`/`PADE_REF`, and runtime SA were not observed live. |
+| Broker log secret-leak scan (`gcloud logging read --project=after-certainty`, bounded to the test window) | Broker log secret-leak inspection unavailable from Coder identity (`PERMISSION_DENIED` for all log views). |
+| STS exchange / Cloud Run runtime identity | Not observed directly. Inferred from temporary `ASIA` Material returned by the broker, which only the deployment-owned provider can produce. |
+| Unauthorized second GCE subject; real Cursor subject requesting `aws.s3.bucket.write` | Not live-tested here. Cursor-not-authorized for AWS remains a static config/CI property in pade-broker-deployment. |
+
+### Safety invariants observed
+
+- No IAM, trust policy, broker, PADE core, or rc-pade code changes, and no redeploy.
+- No raw Google token, numeric subject, AWS credential, account ID, or full role ARN printed, recorded, or committed.
+- The child printed only booleans and error codes. PADE's output redaction additionally masked Material values.
 
 ## Renumbering note
 
@@ -488,4 +582,4 @@ This AWS baseline was originally recorded as Experiment 006. It was moved to Exp
 
 - Generated `DevelopmentSession` remains an untrusted request.
 - Unbound `aws.s3.bucket.write` in `pade plan` is success for **baseline preparation**, not fulfillment.
-- Do not treat the baseline or Phase 1 sections as proof of live S3 access. Phase 2 proves live S3 `PutObject` through **direct** GCE → AWS federation only, not through PADE fulfillment.
+- Do not treat the baseline or Phase 1 sections as proof of live S3 access. Phase 2 proves live S3 `PutObject` through **direct** GCE → AWS federation only, not through PADE fulfillment. Phase 3 proves it through deployed-broker fulfillment for this GCE caller.
