@@ -1,239 +1,167 @@
 # Experiment 010 — resolved semantic identity across the validation boundary
 
-**Status: design scaffold only. No executable experiment yet. Production rc-pade changes: zero.**
+**Status: DONE — design conclusion. No executable harness or production `rc-pade` changes needed.**
 
 ## Question
 
 Experiment 009 established that Runtime Conditions resolution/validation can run as an upstream gate before an unchanged `rc-pade`, and that RC semantic validity is distinct from platform capability support.
 
-Experiment 010 asks the next boundary question:
+Experiment 010 asked:
 
-> After a Runtime Conditions Profile has been resolved and validated, is the validated Condition vocabulary itself sufficient for safe downstream platform interpretation, or must some resolved semantic identity/provenance survive validation so the platform knows exactly which semantic contract it is acting on?
+> After a Runtime Conditions Profile has been resolved and validated, is the validated Condition vocabulary itself sufficient for safe downstream platform interpretation, or must resolved extension identity/provenance survive validation so the platform knows which semantic contract it is acting on?
 
-The concrete pressure is that `rc-pade` currently classifies Conditions using `kind + interfaceType`.
+The concrete concern was that `rc-pade` classifies Conditions using visible vocabulary such as `kind + interfaceType` plus bounded field predicates. If two different extension IDs could carry different hidden semantics behind the same apparent vocabulary, an adapter might appear to need extension identity to distinguish them.
 
-For example, if two different immutable extensions can each define semantically different vocabulary that appears downstream as:
+## Result
 
-```yaml
-kind: source_control
-interface:
-  type: git
-  provider: github
-  access: [push]
-```
+For the current Runtime Conditions design, **do not add extension-identity-aware projection to `rc-pade`**.
 
-then a consumer matching only `source_control + git` may be unable to distinguish two different semantic contracts.
+The intended semantic contract is the Condition vocabulary itself. Extension identity may be available and a platform may choose to use it for a special case, but it is not intended to carry hidden semantic meaning that downstream consumers must recover after validation.
 
-Experiment 010 should determine whether that substitution is legal and meaningful under Runtime Conditions semantics before adding any identity-aware behavior to `rc-pade`.
+This conclusion comes from the Runtime Conditions architecture discussion:
 
-## Starting point
+https://github.com/orgs/runtimeconditions/discussions/1
 
-Experiment 009 demonstrated this boundary:
+In the 2026-09-30 maintainer clarification, Colin Lacy described the intended model as follows:
 
-```text
-RuntimeConditionsProfile
-        ↓
-RC resolution + validation
-        ↓
-same Profile bytes
-        ↓
-unchanged rc-pade
-        ↓
-platform projection policy
-```
+- extension-defined vocabulary should be namespaced when it is vendor-specific, platform-specific, experimental, or likely to conflict;
+- that namespacing applies to `kind`, `interface.type`, Condition/interface field names, and non-shared field values;
+- `interface.type` and subsequent fields/values are semantically tied to their `kind`;
+- duplicate unnamespaced vocabulary is technically possible, but is considered a risky extension-authoring choice rather than a semantic distinction downstream adapters are expected to recover from extension identity;
+- if two vocabularies need different meanings, namespacing the `kind` is the preferred way to express that distinction;
+- once a Condition has been validated against the extension vocabulary, the extension artifact itself is not expected to be required for provisioning;
+- downstream platforms still own interpretation and support boundaries, and may expose those boundaries as a capabilities catalog.
 
-009 established that:
+This does **not** turn a `SHOULD`-level namespacing rule into a `MUST`. It records the intended architecture relevant to `rc-pade`: visible semantic vocabulary is the contract; extension identity is not a substitute for vocabulary that failed to express a semantic distinction.
 
-- RC-invalid semantics can be rejected before `rc-pade`.
-- RC-valid but platform-unsupported semantics can fail later at platform policy.
-- `rc-pade` does not need to load extension artifacts for the tested `source_control/git` case.
-- Validation is currently a pipeline property; no validation attestation was introduced.
-- Nothing in 009 established whether resolved extension identity must survive that boundary.
+## What happened to the proposed falsification
 
-The Experiment 009 investigation also recorded several unresolved implementation observations around ambiguous kinds, explicit selectors, provenance fidelity, validator divergence, and cross-Profile semantic substitution. Those are inputs to 010, not assumptions.
-
-## Candidate hypothesis
-
-Start with the weaker hypothesis:
-
-> A downstream platform can safely interpret an RC-validated Condition using the validated vocabulary plus platform policy, without carrying resolved extension identity into projection.
-
-A useful falsification would be:
-
-> Two separately accepted Profiles contain the same `(kind, interfaceType)` and compatible field shape, but those semantics resolve from different extension identities and are not semantically interchangeable. An unchanged `rc-pade` projects them identically.
-
-If such a case is valid under the RC spec, validated vocabulary alone is not enough for safe platform interpretation.
-
-If the RC spec prevents that case, identify the invariant that prevents it instead of inventing an identity gate.
-
-## What 010 must distinguish
-
-Do not treat these as equivalent without evidence:
-
-1. same syntax
-2. same validated vocabulary
-3. same resolved semantic identity
-4. same platform support
-
-The experiment should determine which of these identities a downstream consumer actually needs.
-
-## Design investigation
-
-Before implementing an executable harness, inspect the current Runtime Conditions spec and tooling and answer the following.
-
-### A. What semantic ownership exists today?
-
-For a validated Condition, identify exactly what current RC semantics and tooling can tell us about:
-
-- the extension owning the Condition `kind`
-- the extension owning `interface.type`
-- the extension or schema defining interface fields used by `rc-pade`
-- the schemas actually applied during validation
-- explicit vs fallback kind resolution
-
-For each semantic element, record:
-
-| Semantic element | Spec ownership rule | Current resolver behavior | Identity exposed? | Remaining ambiguity |
-|---|---|---|---|---|
-| Condition kind | TBD | TBD | TBD | TBD |
-| interface.type | TBD | TBD | TBD | TBD |
-| interface fields | TBD | TBD | TBD | TBD |
-| field values | TBD | TBD | TBD | TBD |
-| schemas applied | TBD | TBD | TBD | TBD |
-
-Do not infer ownership that the resolver does not explicitly expose.
-
-### B. Can ownership diverge within one Profile?
-
-Determine whether a legal Profile can have, for example:
-
-```text
-kind owner           = Extension A
-interface.type owner = Extension B
-schema semantics     = Extension B
-```
-
-If the spec forbids this, identify the exact rule.
-
-If the current resolver prevents it, identify how.
-
-If the resolver permits something the spec forbids, record an implementation gap rather than treating it as architecture.
-
-### C. Can semantic substitution happen across Profiles?
-
-Determine whether two independently valid Profiles can legally use the same:
+The original design scaffold proposed constructing two accepted Profiles with the same apparent:
 
 ```text
 kind + interface.type + field shape
 ```
 
-while resolving that vocabulary from different immutable extension IDs.
+but different extension IDs and different semantics, then showing that unchanged `rc-pade` projected them identically.
 
-If yes, determine whether:
+That fixture is no longer useful as the next experiment.
 
-- the two extensions can assign different semantics to the same apparent vocabulary
-- current `rc-pade` would distinguish them
-- current upstream resolver output gives a platform enough identity to distinguish them before projection
+The spec can permit poorly namespaced extension vocabulary, so a collision can be constructed. But under the clarified design intent, assigning different hidden meanings to identical visible vocabulary would demonstrate an extension-authoring problem, not a requirement for every downstream adapter to perform identity-aware dispatch.
 
-If no, identify the RC invariant that makes substitution impossible.
-
-This is the likely core falsification case for 010.
-
-### D. What exactly does `conditions[].extension` select?
-
-Do not assume that selecting the extension defining a Condition `kind` selects all semantics inside the Condition.
-
-Determine from the current spec:
-
-- the exact scope of `conditions[].extension`
-- what vocabulary remains independently resolved
-- whether selector choice affects interface type resolution or schema application
-- what explicit vs fallback provenance means downstream
-
-Also compare this to current resolver behavior and first-party extension schemas.
-
-### E. What would a platform support contract key on?
-
-Only after A–D are understood, evaluate whether a platform capability catalog would need to key support on:
-
-- `kind + interfaceType`
-- resolved extension ID
-- extension ID + vocabulary element
-- a resolved semantic tuple
-- something else
-
-Do not add such a catalog in this experiment until a real falsification case demonstrates the need.
-
-## Questions for the Runtime Conditions group
-
-Before implementing identity-aware projection, get clarification on these if the current spec does not answer them unambiguously:
-
-1. When `conditions[].extension` selects the extension defining `kind`, is that selector intentionally limited to kind ownership, or is it expected to scope other Condition vocabulary too?
-2. After validation, is there a canonical resolved semantic identity that downstream consumers are expected to use when declaring platform support?
-3. Should two different immutable extension IDs that happen to define the same `kind + interface.type` names be treated as distinct semantic contracts by downstream consumers?
-4. If extension artifacts are no longer needed after validation, what stable contract is an adapter expected to be coded against?
-
-Relevant architecture discussion:
-
-https://github.com/orgs/runtimeconditions/discussions/1
-
-## Implementation guardrails
-
-Until the semantic questions above are resolved, Experiment 010 must not:
-
-- add extension identity to `ProjectionPolicy`
-- add identity-aware dispatch to the projector
-- add a general capability catalog
-- change production `rc-pade` parsing
-- invent a normalized validated-Profile format
-- add validation attestation
-- duplicate Runtime Conditions resolution in `rc-pade`
-- treat current resolver quirks as intended spec semantics
-- begin resource binding or fulfillment work
-
-Production code changes should remain **zero** during the design phase.
-
-## Likely experiment shape
-
-If the RC semantics support the cross-Profile substitution question, the eventual executable experiment should remain small:
+In other words:
 
 ```text
-Profile A + Extension A ──validate──┐
-                                   ├── compare resolved semantics
-Profile B + Extension B ──validate──┘
-                                   ↓
-                            unchanged rc-pade
-                                   ↓
-                         compare projection result
+different extension IDs
+        +
+same visible vocabulary
+        +
+different hidden meaning
+
+does not imply
+
+extension-ID-aware platform dispatch
+
+it implies
+
+the semantic distinction should have been expressed in the vocabulary
 ```
 
-A useful result could be either:
+An executable harness built around the pathological case would risk turning a discouraged authoring pattern into permanent downstream architecture.
 
-- **substitution is impossible by spec** → document the invariant; no identity gate needed for this reason
-- **substitution is possible and semantically distinct** → demonstrate unchanged `rc-pade` cannot distinguish it, then design the smallest downstream support gate
-- **current tooling cannot faithfully expose the semantics needed to test it** → stop and report the upstream gap
+## Boundary after 008–010
 
-## Stop conditions
+Experiments 008–010 now support this model:
 
-Stop instead of growing architecture if:
+```text
+extension-defined semantic vocabulary
+        ↓
+Runtime Conditions resolution + validation
+        ↓
+validated Profile
+        ↓
+rc-pade platform projection policy
+        ↓
+supported capability intent
+        ↓
+downstream fulfillment
+```
 
-- the proposed fixture would be invalid under the current RC spec
-- the only way to construct the case is to depend on a known resolver bug
-- current tooling reports kind identity but cannot identify the semantics actually used for interface/schema validation
-- testing explicit selectors is blocked by first-party schemas rejecting the core selector field
-- a result would require assuming unresolved RC-group intent
-- implementation would require production `rc-pade` changes before the semantic question is answered
+Responsibilities stay separate:
 
-Any of those is a valid Experiment 010 finding.
+| Layer | Responsibility |
+|---|---|
+| Runtime Conditions extension | Define actionable semantic vocabulary; namespace vocabulary when meanings are not globally shared |
+| RC validation/resolution | Establish that the Profile uses vocabulary according to the extension contracts |
+| `rc-pade` | Interpret validated visible demand using explicit platform policy; fail closed on unsupported demand |
+| Platform/operator | Decide support boundaries, resource binding, identity, credentials, provisioning, scale, compliance, cost, networking, and other environment-specific concerns |
 
-## Success criteria for the design phase
+The extension artifact does not need to become part of PADE intent, and concrete resource identity remains downstream platform responsibility.
 
-The design phase is complete when we can state, with evidence:
+## Consequence for current projection policy
 
-1. what semantic identity RC defines for each relevant vocabulary element
-2. whether same-shaped vocabulary from different extension IDs can be semantically distinct
-3. whether current tooling exposes enough resolved identity to enforce platform support safely
-4. the smallest falsifiable executable test, if one is possible
-5. which remaining questions require upstream clarification
+No production change is justified by Experiment 010.
 
-Only then should Experiment 010 gain an executable harness.
+Keep the current direction established by 008 and 009:
+
+- match on visible semantic vocabulary such as `kind`, `interface.type`, and bounded field/value predicates;
+- keep projection policy platform-owned and explicit;
+- use `cover`/fail-closed behavior so recognized conditions cannot silently lose unsupported values;
+- keep RC validation upstream of projection;
+- distinguish RC-valid from platform-supported;
+- do not infer concrete resource identity, credentials, provider bindings, or provisioning inputs from extension identity.
+
+A future platform capabilities catalog could make support boundaries easier to inspect, but 010 does not introduce one. If such a catalog is added later, current evidence favors keying it on the semantic vocabulary/capabilities the platform supports rather than on extension IDs by default.
+
+## Explicitly not added
+
+Experiment 010 adds none of the following:
+
+- extension identity in `ProjectionPolicy`;
+- identity-aware projector dispatch;
+- a normalized validated-Profile format;
+- validation attestation;
+- duplicate Runtime Conditions resolution inside `rc-pade`;
+- a general capability catalog;
+- resource binding or fulfillment logic.
+
+Production `rc-pade` changes: **zero**.
+
+## Remaining nuance
+
+This is an architectural conclusion for the current design, not a proof that namespace collisions can never occur.
+
+The spec intentionally leaves room for controlled/private extension ecosystems and therefore does not make all namespacing mandatory. A platform is also free to key on extension ID if it has a concrete reason. What 010 concludes is narrower:
+
+> `rc-pade` has no evidence-based reason today to carry resolved extension identity across the validation boundary merely to defend against different hidden meanings behind otherwise identical vocabulary.
+
+That would solve the wrong problem at the wrong layer.
+
+## Reopen conditions
+
+Reopen the identity question only if new evidence appears, for example:
+
+- a real extension ecosystem produces a valid collision that cannot be made semantically explicit through namespaced vocabulary;
+- the Runtime Conditions spec changes to define a canonical resolved semantic identity intended for downstream dispatch;
+- a first-party extension requires behavior that cannot be expressed through its visible Condition vocabulary;
+- a real platform integration demonstrates that extension identity is necessary for safe interpretation rather than merely convenient metadata.
+
+Until then, no executable Experiment 010 harness is warranted.
+
+## Relationship to the architecture discussion
+
+The clarification also reinforces the broader boundary established across the previous experiments:
+
+- application/Profile expresses demand;
+- Runtime Conditions provides portable semantic vocabulary and validation;
+- `rc-pade` interprets that demand against platform support policy;
+- the downstream platform decides concrete resources and fulfillment.
+
+That is consistent with the earlier discussion that concrete resource identity is a platform responsibility unless the application itself intrinsically names a specific resource.
+
+## Conclusion
+
+Experiment 010 closes as a design result:
+
+> Validated visible Runtime Conditions vocabulary is the intended semantic contract for downstream interpretation. Semantic distinctions should be expressed in that vocabulary, using namespacing where needed. `rc-pade` should not add extension-ID-aware projection unless future concrete evidence demonstrates a need.
+
+No code change follows from this experiment.
