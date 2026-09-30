@@ -310,6 +310,27 @@ Tags are a secondary safety check; exact names and account ownership are always 
 
 Redact the AWS account ID before publishing evidence outside the team, and follow 005C's practice of not publishing the numeric Google `sub` in public docs.
 
+### Bootstrap run (recorded)
+
+Operator run from a developer workstation on 2026-09-30 (UTC) with `check-aws`, `bootstrap-aws`, then `show-aws`, at rc-pade commit `809ebdff95c8aaef6403ecf03c2b8f71cb80f16c`. Summary from the gitignored `generated/aws-bootstrap.json` (account ID redacted, numeric subject omitted):
+
+| Fact | Observation |
+|------|-------------|
+| Region | `us-east-1` |
+| Bucket | `after-certainty-rc-pade-007-1abcdf`, owned by the caller account |
+| Bucket tags | `Project=rc-pade`, `Experiment=007`, `Purpose=s3-federation` |
+| Public access block | all four settings `true` |
+| Encryption / ownership / versioning | SSE-S3 (`AES256`) / `BucketOwnerEnforced` / unversioned |
+| Role | `arn:aws:iam::<account>:role/pade-experiment-007-s3-write`, same tags, max session 3600s |
+| Trust principal / action | `accounts.google.com` / `sts:AssumeRoleWithWebIdentity` |
+| Trust conditions (`StringEquals`) | `accounts.google.com:aud` = service-account unique ID; `accounts.google.com:sub` = same ID; `accounts.google.com:oaud` = `https://rc-pade-007.after-certainty.aws` |
+| Service account | `pade-coder-workspace@after-certainty.iam.gserviceaccount.com` (subject from 005B) |
+| Permissions | inline `experiment-007-s3-put-object` only: `s3:PutObject` on `arn:aws:s3:::after-certainty-rc-pade-007-1abcdf/experiment-007/*`; no attached managed policies |
+| `trustPolicyMatchesConfig` | `true` |
+| `permissionsPolicyMatchesExpected` | `true` |
+
+Not done in this run: no access keys created, no Google token minted, no STS web-identity exchange, no object written. The caller was the account root user via `aws login`; Phase 2 and later operator work should use a non-root IAM principal.
+
 ### Remaining for Phase 2 (next PR)
 
 From the GCE-backed Coder workspace:

@@ -84,3 +84,13 @@ awsBootstrap:
   accessKeysCreated: false
   federationTested: false
   liveS3: false
+  run:
+    # Account ID and numeric Google subject intentionally omitted.
+    dateUtc: "2026-09-30"
+    rcPadeCommit: 809ebdff95c8aaef6403ecf03c2b8f71cb80f16c
+    region: us-east-1
+    bucket: after-certainty-rc-pade-007-1abcdf
+    role: pade-experiment-007-s3-write
+    audience: https://rc-pade-007.after-certainty.aws
+    trustPolicyMatchesConfig: true
+    permissionsPolicyMatchesExpected: true
