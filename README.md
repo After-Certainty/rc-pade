@@ -102,3 +102,10 @@ Keeping that opinion here lets both contracts evolve independently and makes the
 Very early experiment. The policy format (`rc-pade.local/v1alpha1`) is local to this repository and deliberately provisional.
 
 Interoperability proofs live under [`experiments/`](experiments/), from minimal RC→session fixtures through Coder/GCE identity (005C), composed rc-demos Profile consumption (006), and broker-mediated AWS S3 fulfillment (007). See the [experiment index](experiments/README.md).
+
+## Security boundary
+
+Projection requests authority; it does not grant it. Operator projection policies
+reject unknown fields, while Profiles retain extension-defined data and need a
+separate Runtime Conditions validation gate. See [security boundaries and the
+policy-decoding regression](docs/security-boundaries.md).

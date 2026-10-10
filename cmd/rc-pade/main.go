@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/After-Certainty/rc-pade/internal/model"
@@ -53,8 +55,17 @@ func readYAML(path string, into any) error {
 	if err != nil {
 		return fmt.Errorf("read %s: %w", path, err)
 	}
-	if err := yaml.Unmarshal(data, into); err != nil {
+	dec := yaml.NewDecoder(bytes.NewReader(data))
+	// Operator policy has a closed vocabulary: a misspelled guard must not
+	// silently disappear. Profiles retain extension-defined fields and use
+	// upstream Runtime Conditions validation, not this policy schema.
+	_, policy := into.(*model.ProjectionPolicy)
+	dec.KnownFields(policy)
+	if err := dec.Decode(into); err != nil {
 		return fmt.Errorf("parse %s: %w", path, err)
+	}
+	if err := dec.Decode(new(any)); err != io.EOF {
+		return fmt.Errorf("parse %s: expected exactly one YAML document", path)
 	}
 	return nil
 }
