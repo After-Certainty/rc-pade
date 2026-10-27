@@ -25,7 +25,7 @@ ensure_go() {
   fi
 
   if ! command -v mise >/dev/null 2>&1; then
-    echo "mise install failed; install Go 1.26.6 (see mise.toml) and re-run." >&2
+    echo "mise install failed; install Go 1.26.10 (see mise.toml) and re-run." >&2
     exit 1
   fi
 
@@ -36,7 +36,7 @@ ensure_go() {
   eval "$(mise activate bash --shims)"
 
   if ! command -v go >/dev/null 2>&1; then
-    echo "Go still missing after mise install; install Go 1.26.6 and re-run." >&2
+    echo "Go still missing after mise install; install Go 1.26.10 and re-run." >&2
     exit 1
   fi
 }

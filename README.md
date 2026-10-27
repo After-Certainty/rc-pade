@@ -101,7 +101,7 @@ Keeping that opinion here lets both contracts evolve independently and makes the
 
 Very early experiment. The policy format (`rc-pade.local/v1alpha1`) is local to this repository and deliberately provisional.
 
-Interoperability proofs live under [`experiments/`](experiments/), from minimal RC→session fixtures through Coder/GCE identity (005C), composed rc-demos Profile consumption (006), and broker-mediated AWS S3 fulfillment (007). See the [experiment index](experiments/README.md).
+Interoperability proofs live under [`experiments/`](experiments/), from minimal RC→session fixtures through Coder/GCE identity (005C), composed rc-demos Profile consumption (006), and broker-mediated AWS S3 fulfillment (007). See the [experiment index](experiments/README.md). The current release compatibility baseline is [Experiment 011](experiments/011-pade-v041-compatibility/), testing PADE v0.4.1 against the original S3 projections without changing the original experiment evidence.
 
 ## Security boundary
 
