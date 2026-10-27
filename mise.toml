@@ -1,5 +1,5 @@
 [tools]
-go = "1.26.6"
+go = "1.26.10"
 
 [tasks.test]
 description = "Run unit tests"
@@ -40,3 +40,7 @@ run = "bash experiments/007-s3-fulfillment/scripts/test-gce-aws.sh"
 [tasks."007:test-scripts"]
 description = "Experiment 007: offline checks for AWS scripts (no AWS calls)"
 run = "bash experiments/007-s3-fulfillment/scripts/test-local.sh"
+
+[tasks."011:compat"]
+description = "Experiment 011: credential-free released PADE v0.4.1 CLI interoperability"
+run = "bash experiments/011-pade-v041-compatibility/run.sh"

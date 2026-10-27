@@ -1,0 +1,20 @@
+# Planned/replayable compatibility pins. Results are in per-run CI artifacts.
+experiment:
+  id: "011"
+  name: pade-v041-compatibility
+  mode: credential-free-cli-validate-plan
+pade:
+  repository: https://github.com/After-Certainty/pade.git
+  tag: v0.4.1
+  commit: 05fb0361c8af17c2031b2e3815d252d9cc49bdf7
+  archives:
+    linux-amd64: {sha256: 1a1832ba627657a00f655312d5fb71894a2c4527edeb43e89b3ded49335fe09b}
+    linux-arm64: {sha256: 162f7032a4e4a2ba16efa6ed96cdc571ac79d1999d9d2e1f0e50f66b3a351440}
+    darwin-arm64: {sha256: a32fc54b3cab57ef9e19c4fa1d1579f035b238518290a94e08d6b253b4e195f0}
+toolchain:
+  go: 1.26.10
+inputs:
+  - {profile: examples/s3-put-object/runtime-conditions.yaml, expected: examples/s3-put-object/expected-pade.yaml}
+  - {profile: experiments/002-real-rc-profile/runtime-conditions.yaml, expected: experiments/002-real-rc-profile/expected-pade.yaml}
+policy: examples/s3-put-object/policy.yaml
+notTested: [broker-authorization, workload-identity, credential-material, live-s3]
