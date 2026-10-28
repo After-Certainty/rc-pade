@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Experiment 011: released PADE v0.4.1 wire-format compatibility (no credentials).
+# Experiment 012: released PADE v0.4.1 wire-format compatibility (no credentials).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-OUT="${RC_PADE_011_WORK:-$ROOT/experiments/011-pade-v041-compatibility/generated}"
+OUT="${RC_PADE_012_WORK:-$ROOT/experiments/012-pade-v041-compatibility/generated}"
 VERSION="v0.4.1"
 SOURCE_COMMIT="05fb0361c8af17c2031b2e3815d252d9cc49bdf7"
 POLICY="$ROOT/examples/s3-put-object/policy.yaml"
@@ -98,4 +98,4 @@ verify_fixture real-rc \
 
 printf 'pade_release=%s\npade_commit=%s\ngo_toolchain=%s\nbroker_execution=not_attempted\n' \
   "$VERSION" "$SOURCE_COMMIT" "$(go version)" >"$OUT/run-provenance.txt"
-echo "PASS Experiment 011: PADE v0.4.1 CLI compatibility (2 profiles)"
+echo "PASS Experiment 012: PADE v0.4.1 CLI compatibility (2 profiles)"

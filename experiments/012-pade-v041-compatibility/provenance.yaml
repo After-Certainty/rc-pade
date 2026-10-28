@@ -1,6 +1,6 @@
 # Planned/replayable compatibility pins. Results are in per-run CI artifacts.
 experiment:
-  id: "011"
+  id: "012"
   name: pade-v041-compatibility
   mode: credential-free-cli-validate-plan
 pade:
