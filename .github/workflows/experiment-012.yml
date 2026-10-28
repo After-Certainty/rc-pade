@@ -1,27 +1,27 @@
-name: experiment-011-pade-v041-compatibility
+name: experiment-012-pade-v041-compatibility
 
 on:
   pull_request:
     paths:
-      - 'experiments/011-pade-v041-compatibility/**'
+      - 'experiments/012-pade-v041-compatibility/**'
       - 'experiments/002-real-rc-profile/**'
       - 'examples/s3-put-object/**'
       - 'cmd/**'
       - 'internal/**'
       - 'go.mod'
       - 'go.sum'
-      - '.github/workflows/experiment-011.yml'
+      - '.github/workflows/experiment-012.yml'
   push:
     branches: [main]
     paths:
-      - 'experiments/011-pade-v041-compatibility/**'
+      - 'experiments/012-pade-v041-compatibility/**'
       - 'experiments/002-real-rc-profile/**'
       - 'examples/s3-put-object/**'
       - 'cmd/**'
       - 'internal/**'
       - 'go.mod'
       - 'go.sum'
-      - '.github/workflows/experiment-011.yml'
+      - '.github/workflows/experiment-012.yml'
   workflow_dispatch:
 
 permissions:
@@ -38,19 +38,19 @@ jobs:
           go-version: '1.26.10'
           cache: true
       - name: Check shell syntax
-        run: bash -n experiments/011-pade-v041-compatibility/run.sh
+        run: bash -n experiments/012-pade-v041-compatibility/run.sh
       - name: Test current projections with released PADE v0.4.1
         env:
-          RC_PADE_011_WORK: ${{ runner.temp }}/rc-pade-experiment-011
-        run: bash experiments/011-pade-v041-compatibility/run.sh
+          RC_PADE_012_WORK: ${{ runner.temp }}/rc-pade-experiment-012
+        run: bash experiments/012-pade-v041-compatibility/run.sh
       - name: Upload non-secret compatibility evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: experiment-011-cli-compatibility-evidence
+          name: experiment-012-cli-compatibility-evidence
           if-no-files-found: warn
           path: |
-            ${{ runner.temp }}/rc-pade-experiment-011/*.development-session.yaml
-            ${{ runner.temp }}/rc-pade-experiment-011/*.validate.txt
-            ${{ runner.temp }}/rc-pade-experiment-011/*.plan.json
-            ${{ runner.temp }}/rc-pade-experiment-011/run-provenance.txt
+            ${{ runner.temp }}/rc-pade-experiment-012/*.development-session.yaml
+            ${{ runner.temp }}/rc-pade-experiment-012/*.validate.txt
+            ${{ runner.temp }}/rc-pade-experiment-012/*.plan.json
+            ${{ runner.temp }}/rc-pade-experiment-012/run-provenance.txt
