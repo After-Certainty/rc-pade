@@ -37,7 +37,6 @@ gce:
   identityAdapter: gce
 
 coder:
-  deployment: https://pfto1jm2pqk7c.pit-1.try.coder.app
   workspaceName: pade-gcp
   templateName: gcp-pade
   templateVersionAtCapture: lucky_morgan36

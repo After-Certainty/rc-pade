@@ -143,4 +143,4 @@ values were never printed.
 
 Machine-readable pins: [`provenance.yaml`](provenance.yaml).
 
-Module-managed handoff follow-up: [`pade-coder-handoff-followup.md`](pade-coder-handoff-followup.md) → [`checkpoint-a-provenance.yaml`](checkpoint-a-provenance.yaml), [`checkpoint-b-provenance.yaml`](checkpoint-b-provenance.yaml).
+Module-managed handoff follow-up: [`pade-coder-handoff-followup.md`](pade-coder-handoff-followup.md) → [`checkpoint-a-provenance.yaml`](checkpoint-a-provenance.yaml), [`checkpoint-b-provenance.yaml`](checkpoint-b-provenance.yaml). Remaining findings (A7 fresh-home inputs, S3 `rcvalidate` reject, Case A carrying B) are listed in the runbook. The B1→B2 report shape bridge is [`project-validation-report.py`](project-validation-report.py) over [`checkpoint-b/`](checkpoint-b/).

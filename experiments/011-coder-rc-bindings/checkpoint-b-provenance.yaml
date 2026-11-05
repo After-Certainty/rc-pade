@@ -104,21 +104,34 @@ checkpoints:
           accepted: true
           reportedSha256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
           hashBoundToFileBytes: true
-        freshReportPath: .work/experiment-011-checkpoint-b/case-a/validation-report.yaml
+        freshReportPath: experiments/011-coder-rc-bindings/checkpoint-b/raw-validation-report.yaml
         continuesToB2: true
 
   B2:
     result: pass
     inputProfile: caseAGitHubProfile
     evidenceProjection:
-      note: |
-        Raw rcvalidate YAML includes fields outside the 011 adapter KnownFields
-        shape (validator.scope, profile.path/declaredExtensions, resolvedExtensions,
-        conditions[].name). Projected to adapter KnownFields while preserving
-        accepted, validator module/version, profile sha256/bytes, and per-condition
-        index/kind/interfaceType/valid from the fresh B1 Case A report.
+      helper: experiments/011-coder-rc-bindings/project-validation-report.py
+      method: |
+        Deterministic field projection only: keep accepted, validator.module,
+        validator.version, profile.sha256, profile.bytes, and each condition's
+        index/kind/interfaceType/valid. Drop adapter-unknown extras from the
+        fresh rcvalidate report (validator.scope, profile.path,
+        profile.declaredExtensions, resolvedExtensions, conditions[].name).
+        Fixed YAML layout in the helper so projected bytes are reproducible.
+        Does not forge acceptance or loosen the adapter KnownFields decoder.
+      rawReport:
+        path: experiments/011-coder-rc-bindings/checkpoint-b/raw-validation-report.yaml
+        sha256: 6be41940700b4821ec56202277e22f59a81c263e907c967ceb24b61571232706
+        bytes: 1792
+      projectedReport:
+        path: experiments/011-coder-rc-bindings/checkpoint-b/projected-validation-report.yaml
+        sha256: aceb19dc7cc6717aa962fa088192388731a88e60f262e3a6a2264fa00dedb20f
+        bytes: 442
+        consumedByAdapter: true
       forgedAcceptance: false
-      hashPreserved: true
+      profileHashPreserved: true
+      helperReproducesProjectedBytes: true
     policy: experiments/008-rc-field-projection/policy.yaml
     allowCapabilities: [github.repo.read, github.repo.write]
     brokerBindingSource: ~/.config/pade/rc-downstream/broker_binding.json
