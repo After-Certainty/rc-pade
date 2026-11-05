@@ -41,6 +41,10 @@ cmp \
   "$EXPERIMENT/app/storage.py" \
   "$SDK/s3/python/direct-client/src/s3_direct_client/storage.py"
 
+# Reproducibility guard: the pinned botocore release requires python-dateutil <3.
+# Preserve this constraint through nested pip installs run by the pinned RC SDK.
+# It does not change source/profile pins or historical experiment observations.
+export PIP_CONSTRAINT="$EXPERIMENT/pip-constraints.txt"
 python3 -m venv "$WORK/venv"
 # shellcheck disable=SC1091
 source "$WORK/venv/bin/activate"

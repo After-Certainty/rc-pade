@@ -10,5 +10,6 @@ experiments/007-s3-fulfillment/generated/
 experiments/008-rc-field-projection/generated/
 experiments/009-rc-validated-projection/generated/
 experiments/011-coder-rc-bindings/generated/
+experiments/012-pade-v041-compatibility/generated/
 __pycache__/
 *.pyc

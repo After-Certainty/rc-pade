@@ -1,0 +1,4 @@
+# Experiment 003: ensure pinned botocore 1.43.80's python-dateutil <3 requirement
+# remains satisfiable as new upstream dateutil releases appear. Used by the
+# pinned Runtime Conditions SDK maintenance process and its nested pip invocations.
+python-dateutil==2.9.0.post0
