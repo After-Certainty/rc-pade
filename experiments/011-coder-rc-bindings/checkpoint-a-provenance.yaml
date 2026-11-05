@@ -1,0 +1,200 @@
+# Experiment 011 — pade-coder module-managed handoff follow-up (Checkpoint A).
+# No JWTs, GitHub tokens, AWS secrets, account IDs, or numeric Google subjects.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: main
+  commitAtCapture: 647f581ccea0cb242baa602aacb0a2e053782e1a
+  runbook: experiments/011-coder-rc-bindings/pade-coder-handoff-followup.md
+  adapter:
+    path: experiments/011-coder-rc-bindings
+    unitTests: passed
+
+padeCoder:
+  repository: https://github.com/After-Certainty/pade-coder.git
+  commit: 3e9184087665b2bc6ebe7d261d1fbbd88cf94b60
+  module: modules/pade
+  defaultPadeVersion: v0.4.1
+  defaultBrokerCapabilities: []
+  outputs: [broker_binding, bindings_path, scripts, pade_version]
+
+pade:
+  repository: https://github.com/After-Certainty/pade.git
+  tag: v0.4.1
+  commit: 05fb036
+  binary: ~/.local/bin/pade
+  versionOutput: "pade version v0.4.1 (05fb036, built 2026-10-27T16:26:17Z)"
+  installPath: pade-coder module (Coder workspace startup)
+
+broker:
+  endpoint: https://pade-broker-754719312452.us-central1.run.app
+  audience: https://pade-broker-754719312452.us-central1.run.app
+
+gce:
+  projectId: after-certainty
+  zone: us-central1-a
+  serviceAccountEmail: pade-coder-workspace@after-certainty.iam.gserviceaccount.com
+  identityAdapter: gce
+
+coder:
+  workspaceName: pade-gcp
+  templateName: gcp-pade
+  templateVersionAtCapture: lucky_morgan36
+  outdated: false
+  owns: workspace-lifecycle
+  isIdentityProvider: false
+
+moduleManagedBindings:
+  path: ~/.config/pade/coder-bindings.yaml
+  expandedPath: /home/ksteffe/.config/pade/coder-bindings.yaml
+  mode: "0600"
+  dynamicBindingsInstallFlag: "1"
+
+checkpoints:
+  A1:
+    inspected: true
+    templateModulePade:
+      pade_version: v0.4.1
+      broker_identity: gce
+      broker_capabilities: []
+      broker_audience: defaults-to-endpoint
+    trustedDownstreamScript: coder_script.rc_trusted_bindings
+    notes:
+      - Consumes module.pade.broker_binding / bindings_path / scripts
+      - Expands bindings_path via Python os.path.expanduser
+      - Marks coder exp sync complete only on successful handoff (success flag file)
+
+  A2:
+    result: pass
+    expectedAfterDynamicInstall:
+      version: "0.1"
+      capabilities: {}
+      mode: "0600"
+    verifiedEmptyCapabilities: true
+    verifiedMode0600: true
+
+  A3:
+    result: pass
+    approach: minimal-materialization-of-module-outputs
+    broker_binding:
+      provider: broker
+      identity: gce
+      endpointEqualsAudience: true
+    bindings_path_expanded: /home/ksteffe/.config/pade/coder-bindings.yaml
+    moduleScripts:
+      - after-certainty-pade-install_script
+    liveSyncUnitsObserved:
+      - after-certainty-pade-install_script
+      - after-certainty-rc-trusted-bindings
+
+  A4:
+    result: pass
+    profile:
+      path: examples/s3-put-object/runtime-conditions.yaml
+      bytes: 282
+      sha256: 0f797117993eb198548046f7c3458ee43d7bcb6f827b0e2086a77a415fba4804
+    validationEvidence:
+      adapterKnownFieldsShape: true
+      rcvalidateRerunInSession: false
+      note: evidence-pack rerun used in-repo S3 fixture; Case A Profile bytes were absent after workspace recreates
+    policy: examples/s3-put-object/policy.yaml
+    allowCapabilities: [aws.s3.bucket.write]
+    brokerBindingSource: module.pade.broker_binding values (A3 materialization)
+    output: module-managed ~/.config/pade/coder-bindings.yaml
+    adapterStdout: "experiment-011: wrote 1 broker-only capability bindings"
+
+  A5:
+    result: pass
+    pathMatchesExpandedModuleBindingsPath: true
+    mode0600: true
+    capabilityNames: [aws.s3.bucket.write]
+    allBrokerBound: true
+    noCredentialMaterialInBindings: true
+    noStaleCapabilities: true
+    failClosedIncompleteInvocation:
+      exitNonZero: true
+      leftEmptyCapabilities: true
+      mode0600: true
+
+  A6:
+    result: pass
+    usedModulePADE_BINDINGSOnly: true
+    noTmpBindingsOverride: true
+    padeValidatePlanCapabilities: ok
+    github:
+      rerunInEvidencePack: false
+      reason: Case A composed Profile bytes not present on disk after recreates
+      priorSessionProof:
+        github.repo.read: authorized
+        probe: After-Certainty/after-certainty
+        github.repo.write: broker-denied
+        detail: "broker resolve denied (http 403)"
+    s3:
+      capability: aws.s3.bucket.write
+      ambientAwsCredentialVars: []
+      defaultChainCredentialsBeforePade: null
+      brokerResolve: authorized
+      childMaterialPresent:
+        AWS_ACCESS_KEY_ID: true
+        AWS_SECRET_ACCESS_KEY: true
+        AWS_SESSION_TOKEN: true
+        AWS_REGION: true
+        AWS_S3_BUCKET: true
+        AWS_S3_PREFIX: true
+      accessKeyIdTemporaryAsiaPrefix: true
+      platformBinding:
+        bucket: after-certainty-rc-pade-007-1abcdf
+        prefix: experiment-007/
+        region: us-east-1
+      putObjectAllowedPrefix:
+        key: experiment-007/experiment-011-a6-evidence-rerun-proof.txt
+        success: true
+        etagPresent: true
+      negativeTests:
+        outsidePrefixPutObject:
+          key: experiment-007-negative/should-not-write-011-a6-evidence.txt
+          result: rejected
+          errorCode: AccessDenied
+        listObjectsV2:
+          result: rejected
+          errorCode: AccessDenied
+
+  A7:
+    result: partial-pass-with-integration-finding
+    templateVersionsExercised:
+      - tired_greene30 # pre-downstream
+      - fancy_wilcox51 # first RC downstream (path bug)
+      - thankful_foster78 # expanduser fix
+      - lucky_morgan36 # success-flag sync complete
+    provenStartupOrder:
+      - pade-coder dynamic install (DYNAMIC_BINDINGS=1)
+      - empty module-managed bindings
+      - after-certainty-pade-install_script completed
+      - after-certainty-rc-trusted-bindings sync-wanted install then ran
+    pathExpansion:
+      bugOnFancyWilcox51: "/home/ksteffe/~/.config/pade/coder-bindings.yaml"
+      fixedOnThankfulFoster78AndLater: /home/ksteffe/.config/pade/coder-bindings.yaml
+    syncCompletePolicy:
+      onFailureSkipsComplete: true
+      unitLeftStartedAfterStopMissingInputs: true
+    integrationFinding:
+      automaticFirstBootRegenerationRequiresOperatorInputsPresent: true
+      operatorInputDir: ~/.config/pade/rc-downstream/
+      workspaceRecreateWipesHomeInputs: true
+      note: |
+        On lucky_morgan36, automatic RC handoff correctly STOPped when adapter/profile/policy/allow
+        were missing after a fresh home. After restaging those operator-owned inputs on the live
+        disk, the same adapter contract regenerated aws.s3.bucket.write onto the module-managed
+        bindings path (mode 0600) and sync completed.
+
+safety:
+  durableProviderCredentialsInWorkspace: false
+  durableCredentialsInBindingsFile: false
+  rawGoogleTokenRecorded: false
+  numericGoogleSubjectRecorded: false
+  githubTokenRecorded: false
+  temporaryAwsCredentialsRecorded: false
+  awsAccountIdRecorded: false
+
+result: checkpoint-A-recorded
+recordedUtc: 2026-11-05T06:42:00Z

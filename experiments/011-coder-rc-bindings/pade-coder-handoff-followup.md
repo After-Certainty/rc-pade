@@ -1,6 +1,6 @@
 # Experiment 011 — `pade-coder` module-managed handoff follow-up
 
-**Status:** Runbook only. The steps below are not Experiment 011 evidence until they have been executed and their observations recorded.
+**Status:** Checkpoint A recorded in [`checkpoint-a-provenance.yaml`](./checkpoint-a-provenance.yaml). Checkpoint B recorded in [`checkpoint-b-provenance.yaml`](./checkpoint-b-provenance.yaml) (B1 records both S3 reject and Case A accept).
 
 ## Purpose
 
@@ -331,6 +331,14 @@ Safe evidence includes:
 - S3 experiment key/prefix;
 - presence/absence booleans for Material;
 - temporary-credential classification such as the AWS `ASIA` prefix without the credential value.
+
+## Remaining findings
+
+These are recorded evidence, not soft failures to paper over:
+
+- **A7 / fresh home.** Checkpoint A proved module startup ordering and fail-closed sync behavior. Unattended regeneration on a wiped home still needs a durable or provisioned source for the operator-owned RC inputs (`adapter` / Profile / policy / allowlist / broker binding). Without those inputs the handoff correctly STOPs rather than inventing bindings.
+- **S3 and fresh `rcvalidate`.** Fresh Experiment 009 `rcvalidate` rejects the live S3 fixture (`examples/s3-put-object/runtime-conditions.yaml`) because the pinned `rc-extension-resolver` does not know kind `aws.s3`. That reject is preserved in Checkpoint B provenance; acceptance was not forged.
+- **Case A carried the fresh-validation proof.** The fresh validation → adapter → module-managed bindings → broker fulfillment path therefore uses the composed Experiment 009 Case A `source_control` Profile (GitHub), not the S3 fixture.
 
 ## Success criteria
 

@@ -1,0 +1,35 @@
+validator:
+    module: github.com/runtimeconditions/rc-extension-resolver
+    version: v0.0.0-20260929185940-91c46bf6bcc8
+    scope: 'rc-extension-resolver current implementation: extension resolution, merge conflicts, kind/interface.type lookup, and (kind, interfaceType)-bound extension JSON Schemas; not a full sixth-draft conformance check'
+profile:
+    path: /home/ksteffe/rc-pade-1/.work/experiment-011-checkpoint-b/case-a/composed.profile.yaml
+    sha256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+    bytes: 1682
+    declaredExtensions:
+        - https://runtimeconditions.io/extensions/common-integrations/v1alpha1/runtimeconditions.extension.yaml
+        - https://runtimeconditions.io/extensions/env-configuration/v1alpha1/runtimeconditions.extension.yaml
+        - https://runtimeconditions.io/extensions/google-analytics/0.1.0/runtimeconditions.extension.yaml
+        - https://runtimeconditions.io/extensions/source-control/0.1.0/runtimeconditions.extension.yaml
+resolvedExtensions:
+    - https://runtimeconditions.io/extensions/common-integrations/v1alpha1/runtimeconditions.extension.yaml
+    - https://runtimeconditions.io/extensions/env-configuration/v1alpha1/runtimeconditions.extension.yaml
+    - https://runtimeconditions.io/extensions/google-analytics/0.1.0/runtimeconditions.extension.yaml
+    - https://runtimeconditions.io/extensions/source-control/0.1.0/runtimeconditions.extension.yaml
+conditions:
+    - index: 0
+      name: content-api
+      kind: api
+      interfaceType: http
+      valid: true
+    - index: 1
+      name: site-analytics
+      kind: google.analytics
+      interfaceType: web
+      valid: true
+    - index: 2
+      name: application-source
+      kind: source_control
+      interfaceType: git
+      valid: true
+accepted: true

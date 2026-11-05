@@ -1,0 +1,177 @@
+# Experiment 011 — pade-coder module-managed handoff follow-up (Checkpoint B).
+# Fresh trusted validation → adapter → module-managed bindings → PADE fulfillment.
+# No JWTs, GitHub tokens, AWS secrets, account IDs, or numeric Google subjects.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: docs/experiment-011-checkpoint-a-provenance
+  commitAtCapture: c67143e3e6b329865c64e43e9011640a07fca0ad
+  runbook: experiments/011-coder-rc-bindings/pade-coder-handoff-followup.md
+  adapter:
+    path: experiments/011-coder-rc-bindings
+  relatedCheckpointA: experiments/011-coder-rc-bindings/checkpoint-a-provenance.yaml
+
+validator:
+  wrapper: experiments/009-rc-validated-projection/rcvalidate
+  module: github.com/runtimeconditions/rc-extension-resolver
+  version: v0.0.0-20260929185940-91c46bf6bcc8
+  commit: 91c46bf6bcc8207475ade30a6f6c1d9ab810ac2e
+  note: current upstream implementation used by Experiment 009; not a full sixth-draft conformance validator
+  extensions:
+    repository: https://github.com/runtimeconditions/extensions.git
+    commit: 7a08c8b9cc298c2c4a84b32d7cad2c3d813f97a7
+
+pade:
+  repository: https://github.com/After-Certainty/pade.git
+  tag: v0.4.1
+  commit: 05fb036
+  binary: ~/.local/bin/pade
+  versionOutput: "pade version v0.4.1 (05fb036, built 2026-10-27T16:26:17Z)"
+
+broker:
+  endpoint: https://pade-broker-754719312452.us-central1.run.app
+  audience: https://pade-broker-754719312452.us-central1.run.app
+
+gce:
+  projectId: after-certainty
+  zone: us-central1-a
+  serviceAccountEmail: pade-coder-workspace@after-certainty.iam.gserviceaccount.com
+  identityAdapter: gce
+
+coder:
+  workspaceName: pade-gcp
+  templateName: gcp-pade
+  templateVersionAtCapture: lucky_morgan36
+  outdated: false
+  owns: workspace-lifecycle
+  isIdentityProvider: false
+
+moduleManagedBindings:
+  path: ~/.config/pade/coder-bindings.yaml
+  expandedPath: /home/ksteffe/.config/pade/coder-bindings.yaml
+  mode: "0600"
+
+checkpoints:
+  B1:
+    purpose: fresh trusted validation of exact Profile bytes before adapter consumption
+    legs:
+      s3LiveProfile:
+        result: rejected-by-trusted-validator
+        profile:
+          path: ~/.config/pade/rc-downstream/profile.yaml
+          source: examples/s3-put-object/runtime-conditions.yaml
+          bytes: 282
+          sha256: 0f797117993eb198548046f7c3458ee43d7bcb6f827b0e2086a77a415fba4804
+        rcvalidate:
+          exit: 1
+          accepted: false
+          reportedSha256: 0f797117993eb198548046f7c3458ee43d7bcb6f827b0e2086a77a415fba4804
+          hashBoundToFileBytes: true
+          stderr: 'conditions[0] (aws.s3/bucket): unknown kind "aws.s3"'
+          declaredExtensions: []
+          resolvedExtensions: []
+        freshReportPath: ~/.config/pade/rc-downstream/validation-report.fresh.yaml
+        priorAdapterShapedReportUntouched: true
+        boundary: |
+          Upstream rc-extension-resolver (009 pins) does not know kind aws.s3.
+          Live S3 fulfillment still depends on adapter-shaped evidence, not a
+          fresh trusted validation gate opening for those Profile bytes.
+          Acceptance was not forged.
+
+      caseAGitHubProfile:
+        result: accepted
+        composePins:
+          rcDemos:
+            repository: https://github.com/ksteffe/rc-demos.git
+            commit: 13a85bd4221797c94e209fad576a9d4ab89522f3
+          goRcProfiler:
+            repository: https://github.com/runtimeconditions/go-rc-profiler.git
+            commit: 5d2e860e48842b89ec83414123a7e59228f61d36
+          extensions:
+            commit: 7a08c8b9cc298c2c4a84b32d7cad2c3d813f97a7
+        profile:
+          path: .work/experiment-011-checkpoint-b/case-a/composed.profile.yaml
+          name: web-demo-dev-container
+          bytes: 1682
+          sha256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+          matchesExperiment009CaseA: true
+        conditions:
+          - {index: 0, name: content-api, kind: api, interfaceType: http, valid: true}
+          - {index: 1, name: site-analytics, kind: google.analytics, interfaceType: web, valid: true}
+          - {index: 2, name: application-source, kind: source_control, interfaceType: git, valid: true}
+        rcvalidate:
+          exit: 0
+          accepted: true
+          reportedSha256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+          hashBoundToFileBytes: true
+        freshReportPath: experiments/011-coder-rc-bindings/checkpoint-b/raw-validation-report.yaml
+        continuesToB2: true
+
+  B2:
+    result: pass
+    inputProfile: caseAGitHubProfile
+    evidenceProjection:
+      helper: experiments/011-coder-rc-bindings/project-validation-report.py
+      method: |
+        Deterministic field projection only: keep accepted, validator.module,
+        validator.version, profile.sha256, profile.bytes, and each condition's
+        index/kind/interfaceType/valid. Drop adapter-unknown extras from the
+        fresh rcvalidate report (validator.scope, profile.path,
+        profile.declaredExtensions, resolvedExtensions, conditions[].name).
+        Fixed YAML layout in the helper so projected bytes are reproducible.
+        Does not forge acceptance or loosen the adapter KnownFields decoder.
+      rawReport:
+        path: experiments/011-coder-rc-bindings/checkpoint-b/raw-validation-report.yaml
+        sha256: 6be41940700b4821ec56202277e22f59a81c263e907c967ceb24b61571232706
+        bytes: 1792
+      projectedReport:
+        path: experiments/011-coder-rc-bindings/checkpoint-b/projected-validation-report.yaml
+        sha256: aceb19dc7cc6717aa962fa088192388731a88e60f262e3a6a2264fa00dedb20f
+        bytes: 442
+        consumedByAdapter: true
+      forgedAcceptance: false
+      profileHashPreserved: true
+      helperReproducesProjectedBytes: true
+    policy: experiments/008-rc-field-projection/policy.yaml
+    allowCapabilities: [github.repo.read, github.repo.write]
+    brokerBindingSource: ~/.config/pade/rc-downstream/broker_binding.json
+    adapterStdout: "experiment-011: wrote 2 broker-only capability bindings"
+    output: /home/ksteffe/.config/pade/coder-bindings.yaml
+    mode0600: true
+    capabilityNames: [github.repo.read, github.repo.write]
+    allBrokerBound: true
+    noCredentialMaterialInBindings: true
+    priorCapabilitiesReplaced: [aws.s3.bucket.write]
+    profileShaStillBound: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+    stagedUnder: .work/experiment-011-checkpoint-b/b2-stage/
+
+  B3:
+    result: pass
+    usedModulePADE_BINDINGSOnly: true
+    bindingsPath: /home/ksteffe/.config/pade/coder-bindings.yaml
+    noTmpBindingsOverride: true
+    developmentSessionFile: .work/experiment-011-checkpoint-b/b2-stage/development-session.yaml
+    github:
+      github.repo.read:
+        result: authorized
+        probe: After-Certainty/after-certainty
+        childObservation: "repo_full_name=After-Certainty/after-certainty"
+        tokenPresentInChildOnly: true
+        tokenValueRecorded: false
+      github.repo.write:
+        result: broker-denied
+        padeExec: "broker resolve denied (http 403)"
+        childDidNotRun: true
+
+safety:
+  durableProviderCredentialsInWorkspace: false
+  durableCredentialsInBindingsFile: false
+  rawGoogleTokenRecorded: false
+  numericGoogleSubjectRecorded: false
+  githubTokenRecorded: false
+  temporaryAwsCredentialsRecorded: false
+  awsAccountIdRecorded: false
+  s3AcceptanceNotForgedAfterReject: true
+
+result: checkpoint-B-recorded
+recordedUtc: 2026-11-05T06:54:20Z
