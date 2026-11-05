@@ -1,0 +1,124 @@
+# Experiment 011 — Coder ↔ RC bindings live evidence pins.
+# No JWTs, GitHub tokens, AWS secrets, account IDs, or numeric Google subjects.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: experiment/011-coder-rc-bindings
+  commitBeforeEvidence: 9d66ed85cb22cc52db96b8ef87d7cb215798c0dc
+  adapter:
+    path: experiments/011-coder-rc-bindings
+    unitTests: passed
+
+pade:
+  repository: https://github.com/After-Certainty/pade.git
+  tag: v0.3.0
+  commit: 0467ed2
+  binary: ~/.local/bin/pade
+  versionOutput: "pade version v0.3.0 (0467ed2, built 2026-09-13T02:26:11Z)"
+  installPath: pade-coder module (Coder workspace startup)
+
+broker:
+  endpoint: https://pade-broker-754719312452.us-central1.run.app
+  audience: https://pade-broker-754719312452.us-central1.run.app
+
+gce:
+  projectId: after-certainty
+  zone: us-central1-a
+  serviceAccountEmail: pade-coder-workspace@after-certainty.iam.gserviceaccount.com
+  identityAdapter: gce
+
+coder:
+  workspaceName: pade-gcp
+  owns: workspace-lifecycle
+  isIdentityProvider: false
+
+experiment:
+  id: "011"
+  name: coder-rc-bindings
+  liveFulfillment: true
+  moduleManagedBindingsPathUntouched: ~/.config/pade/coder-bindings.yaml
+  liveBindingsRoot: /tmp/experiment-011-live*  # absolute temp paths; not committed
+
+githubProof:
+  profile:
+    source: experiments/009-rc-validated-projection Case A composed Profile
+    bytes: 1682
+    sha256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+  validationEvidence:
+    reusedExperiment009CaseA: true
+    rcvalidateRerunInSession: false
+    rewrittenToAdapterKnownFieldsShape: true
+    validatorModule: github.com/runtimeconditions/rc-extension-resolver
+    validatorVersion: v0.0.0-20260929185940-91c46bf6bcc8
+  policy: experiments/008-rc-field-projection/policy.yaml
+  allowCapabilities: [github.repo.read, github.repo.write]
+  projectedCapabilities: [github.repo.read, github.repo.write]
+  padeExec:
+    github.repo.read:
+      result: authorized
+      probe: After-Certainty/after-certainty
+      childObservation: "repo_full_name=After-Certainty/after-certainty"
+    github.repo.write:
+      result: broker-denied
+      padeExec: "broker resolve denied (http 403)"
+  failClosedRevokeOnIncompleteInvocation: true
+
+s3Proof:
+  profile:
+    path: examples/s3-put-object/runtime-conditions.yaml
+    bytes: 282
+    sha256: 0f797117993eb198548046f7c3458ee43d7bcb6f827b0e2086a77a415fba4804
+  validationEvidence:
+    adapterShapedReportBoundToProfileBytes: true
+    rcvalidateRerunInSession: false
+    note: proves adapter→bindings→broker for S3; not a fresh upstream validation-gate run
+  policy: examples/s3-put-object/policy.yaml
+  allowCapabilities: [aws.s3.bucket.write]
+  ambientAwsCredentialVars: []
+  defaultChainCredentialsBeforePade: null
+  awsSdk:
+    boto3: 1.43.105
+  via: experiments/003-source-to-session/app/storage.py upload()
+  platformBinding:
+    bucket: after-certainty-rc-pade-007-1abcdf
+    prefix: experiment-007/
+    region: us-east-1
+    roleNameFromExperiment007: pade-broker-experiment-007-s3-write
+  brokerResolve:
+    capability: aws.s3.bucket.write
+    result: authorized
+    childMaterialPresent:
+      AWS_ACCESS_KEY_ID: true
+      AWS_SECRET_ACCESS_KEY: true
+      AWS_SESSION_TOKEN: true
+      AWS_REGION: true
+      AWS_S3_BUCKET: true
+      AWS_S3_PREFIX: true
+    accessKeyIdTemporaryAsiaPrefix: true
+  s3PutObject:
+    success: true
+    key: experiment-007/experiment-011-broker-fulfillment-proof.txt
+    etagPresent: true
+  negativeTests:
+    outsidePrefixPutObject:
+      key: experiment-007-negative/should-not-write-011.txt
+      result: rejected
+      errorCode: AccessDenied
+    listObjectsV2:
+      result: rejected
+      errorCode: AccessDenied
+
+safety:
+  durableProviderCredentialsInWorkspace: false
+  durableCredentialsInBindingsFile: false
+  moduleManagedBindingsOverwritten: false
+  rawGoogleTokenRecorded: false
+  numericGoogleSubjectRecorded: false
+  githubTokenRecorded: false
+  temporaryAwsCredentialsRecorded: false
+  awsAccountIdRecorded: false
+  iamChanged: false
+  brokerRedeployed: false
+
+result: passed
+recordedUtc: 2026-11-05T03:38:00Z

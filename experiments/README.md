@@ -16,6 +16,7 @@ Sequential interoperability proofs for Runtime Conditions ↔ PADE via `rc-pade`
 | 008 | [`008-rc-field-projection`](008-rc-field-projection/) | Opaque interface fields + bounded matcher project live `source_control`/`git` → `github.repo.read` + `github.repo.write` |
 | 009 | [`009-rc-validated-projection`](009-rc-validated-projection/) | Upstream rc-extension-resolver gates the same Profile before unchanged rc-pade; RC-invalid vs platform-unsupported separated |
 | 010 | [`010-resolved-semantic-identity`](010-resolved-semantic-identity/) | **Design conclusion:** validated visible vocabulary is the downstream semantic contract; no extension-ID-aware projection justified |
+| 011 | [`011-coder-rc-bindings`](011-coder-rc-bindings/) | Fail-closed validated RC → broker-only bindings adapter; live GCE Coder → deployed broker fulfills `github.repo.read` and `aws.s3.bucket.write` through 011-produced bindings |
 
 ```text
 001  Minimal RC profile → DevelopmentSession
@@ -30,6 +31,7 @@ Sequential interoperability proofs for Runtime Conditions ↔ PADE via `rc-pade`
 008  Opaque fields + bounded matcher project source_control/git → GitHub capability intent
 009  Upstream RC validation gate → identical Profile bytes → unchanged rc-pade (cases A–D)
 010  Resolved semantic identity question → visible vocabulary remains contract; no identity-aware projector
+011  Validated RC → Coder broker bindings adapter; live github.repo.read + aws.s3.bucket.write via 011 bindings
 ```
 
 **005C** closes the identity/fulfillment substrate for the GCE-backed Coder workspace.
@@ -43,3 +45,5 @@ Sequential interoperability proofs for Runtime Conditions ↔ PADE via `rc-pade`
 **009** puts the current upstream `rc-extension-resolver` (`91c46bf`, not a full sixth-draft validator) in front of unchanged `rc-pade` as an out-of-process gate. The real composed Profile is accepted and projects as in 008 from byte-identical input (SHA-256 chain); an RC-invalid access value (`admin`) is rejected before rc-pade runs; an RC-valid but policy-unsupported value (`clone`) fails in rc-pade with no session. The remaining semantic-identity question is resolved as a design conclusion in 010.
 
 **010** records the Runtime Conditions maintainer clarification that semantic meaning belongs in the visible Condition vocabulary, with namespacing used when meanings are vendor-specific, platform-specific, experimental, or likely to conflict. Duplicate unnamespaced vocabulary is possible but is an extension-authoring risk, not evidence that downstream adapters should recover hidden meaning from extension IDs. `rc-pade` therefore keeps the 008/009 model: validated visible demand + explicit platform projection policy + fail-closed unsupported values. Production changes: zero.
+
+**011** adds a fail-closed experiment-local adapter that turns validated-shaped RC demand, operator projection policy/allowlist, and a broker-only binding template into PADE Consumer bindings for a Coder workspace. Live from the GCE-backed Coder workspace, bindings produced by that adapter fulfilled `github.repo.read` and `aws.s3.bucket.write` through the deployed broker; `github.repo.write` remained denied for this subject.
