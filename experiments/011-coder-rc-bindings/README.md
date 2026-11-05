@@ -142,3 +142,5 @@ values were never printed.
 ```
 
 Machine-readable pins: [`provenance.yaml`](provenance.yaml).
+
+Module-managed handoff follow-up (Checkpoint A): [`pade-coder-handoff-followup.md`](pade-coder-handoff-followup.md) → [`checkpoint-a-provenance.yaml`](checkpoint-a-provenance.yaml).

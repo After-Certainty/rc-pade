@@ -1,6 +1,6 @@
 # Experiment 011 — `pade-coder` module-managed handoff follow-up
 
-**Status:** Runbook only. The steps below are not Experiment 011 evidence until they have been executed and their observations recorded.
+**Status:** Checkpoint A recorded in [`checkpoint-a-provenance.yaml`](./checkpoint-a-provenance.yaml). Checkpoint B not started.
 
 ## Purpose
 
