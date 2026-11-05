@@ -1,6 +1,6 @@
 # Experiment 011 — `pade-coder` module-managed handoff follow-up
 
-**Status:** Checkpoint A recorded in [`checkpoint-a-provenance.yaml`](./checkpoint-a-provenance.yaml). Checkpoint B not started.
+**Status:** Checkpoint A recorded in [`checkpoint-a-provenance.yaml`](./checkpoint-a-provenance.yaml). Checkpoint B recorded in [`checkpoint-b-provenance.yaml`](./checkpoint-b-provenance.yaml) (B1 records both S3 reject and Case A accept).
 
 ## Purpose
 
