@@ -18,6 +18,8 @@ Sequential interoperability proofs for Runtime Conditions ↔ PADE via `rc-pade`
 | 010 | [`010-resolved-semantic-identity`](010-resolved-semantic-identity/) | **Design conclusion:** validated visible vocabulary is the downstream semantic contract; no extension-ID-aware projection justified |
 | 011 | [`011-coder-rc-bindings`](011-coder-rc-bindings/) | Fail-closed validated RC → broker-only bindings adapter; live GCE Coder → deployed broker fulfills `github.repo.read` and `aws.s3.bucket.write` through 011-produced bindings |
 | 012 | [`012-pade-v041-compatibility`](012-pade-v041-compatibility/) | Credential-free PADE v0.4.1 CLI validates/plans existing RC-to-PADE projections |
+| 013 | [`013-coder-durable-rc-inputs`](013-coder-durable-rc-inputs/) | **Planned:** fresh Coder workspace obtains trusted RC/operator inputs durably and regenerates module-managed PADE bindings without manual staging |
+| 014 | [`014-signed-validation-handoff`](014-signed-validation-handoff/) | **Planned after 013:** verify signed upstream RC validation evidence in Coder before unchanged rc-pade → PADE handoff |
 
 ```text
 001  Minimal RC profile → DevelopmentSession
@@ -34,6 +36,8 @@ Sequential interoperability proofs for Runtime Conditions ↔ PADE via `rc-pade`
 010  Resolved semantic identity question → visible vocabulary remains contract; no identity-aware projector
 011  Validated RC → Coder broker bindings adapter; live github.repo.read + aws.s3.bucket.write via 011 bindings
 012  Released PADE v0.4.1 validates and plans the existing S3 projections (no broker)
+013  PLANNED: durable trusted RC/operator inputs → fresh Coder → automatic 011 handoff
+014  PLANNED AFTER 013: signed upstream validation evidence → verified Coder handoff → unchanged rc-pade/PADE
 ```
 
 **005C** closes the identity/fulfillment substrate for the GCE-backed Coder workspace.
@@ -51,3 +55,7 @@ Sequential interoperability proofs for Runtime Conditions ↔ PADE via `rc-pade`
 **011** adds a fail-closed experiment-local adapter that turns validated-shaped RC demand, operator projection policy/allowlist, and a broker-only binding template into PADE Consumer bindings for a Coder workspace. Live from the GCE-backed Coder workspace, bindings produced by that adapter fulfilled `github.repo.read` and `aws.s3.bucket.write` through the deployed broker; `github.repo.write` remained denied for this subject.
 
 **012** provides a new release compatibility baseline: checksum-pinned PADE v0.4.1 validates and plans regenerated examples/002 S3 DevelopmentSessions. It does not rewrite historical experiments or imply broker authorization or live S3 fulfillment.
+
+**013** is the next lifecycle experiment exposed by 011. It asks whether a completely fresh Coder workspace can obtain the trusted Profile/evidence and operator policy inputs from a durable source, then automatically run the existing 011 handoff against the real module-managed bindings path without any manual restaging. It intentionally leaves signed validation provenance out of scope.
+
+**014** follows 013 and adds exactly that stronger trust boundary. It reuses the signed validated-profile-handoff model proven in `runtimeconditions/rc-demos` PR #5 so the Coder consumer can verify signature and artifact digests before rc-pade projection. Signature verification, Runtime Conditions validity, platform support, and PADE broker authorization remain separate decisions.
