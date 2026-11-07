@@ -1,0 +1,26 @@
+Experiment 014 Checkpoint 5: verify signed handoff, then unchanged 011 project/bind.
+Ownership:
+  RC producer/CI: rc-inputs/handoff/{profile.yaml,evidence.json,evidence.sig,extensions/*}
+  platform operator: trusted.pub, policy.yaml, allow-capabilities.txt
+  adapter KnownFields report (post-verify only): validation-report.yaml
+  pade-coder: module.pade.broker_binding / bindings_path / scripts (not embedded)
+Trust root: handoff.Verify (signed evidence). validation-report.yaml is not the handoff trust root.
+Verifier:
+  source: rc-inputs/verify-handoff/main.go
+  rc-demos commit: 853eab3c2c04f9d1059b2dbd64ea91996828a3a9
+  go-rc-profiler commit: 5d2e860e48842b89ec83414123a7e59228f61d36
+Adapter:
+  rc-pade commit: fd592a4c826fb6b8f005c11625122138c797ae63
+  path: experiments/011-coder-rc-bindings
+go version: go1.26.10
+go archive: go1.26.10.linux-amd64.tar.gz
+go sha256: ccfe7ae822d2c2f41f4fe7c956199967a4dac22d0ee0d2b2bfdb440aab3b20c5
+profile sha256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+evidence.json sha256: cf2e3c99a1178eb2200529e4747dc731652c29e509e47ac0f0cb6bdd783b5898
+evidence.sig sha256: da37c1cae3ab4c71c3d323ca402dfaca1701edb62266869344b5d78e5af0fee7
+trusted.pub sha256: 2cf313dcc7b0733cdc164e8066dc8aff7134226ba64ed25f63bc48229b7749b6
+validation-report sha256: aceb19dc7cc6717aa962fa088192388731a88e60f262e3a6a2264fa00dedb20f
+policy sha256: a5f8f138e2ed5ca2d559d8711d7de50fadb0288c5c02532f8316c239a23007a4
+allow-capabilities: github.repo.read,github.repo.write
+allow-capabilities sha256: 152d75d84cfffb6aa04e21658ae207a7dd4c092a0f2e4d2a762e784ba71b009c
+broker_binding: module.pade.broker_binding only (not embedded)

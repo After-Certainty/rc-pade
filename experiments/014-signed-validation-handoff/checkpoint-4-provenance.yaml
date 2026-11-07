@@ -1,0 +1,84 @@
+# Experiment 014 — Checkpoint 4: verify signed handoff before projection.
+# Public evidence only. Never records private signing keys, JWTs, GitHub tokens,
+# AWS secrets, account IDs, or numeric Google subjects.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: docs/experiment-014-signed-validation-handoff
+  commitAtCapture: aa6f6b3d1a364147ef3f6fd3d28f20e78cfb4cd6
+  runbook: experiments/014-signed-validation-handoff/README.md
+  priorCheckpoints:
+    - experiments/014-signed-validation-handoff/checkpoint-1-provenance.yaml
+    - experiments/014-signed-validation-handoff/checkpoint-2-provenance.yaml
+    - experiments/014-signed-validation-handoff/checkpoint-3-provenance.yaml
+
+scope:
+  mode: verify-before-projection
+  adapterInvocation: deferred_to_checkpoint_5
+  adversarialCases: deferred_to_checkpoint_7
+
+coder:
+  templateName: gcp-pade
+  liveTemplateVersion: exp014_signed_handoff_v3
+  liveTemplateActive: true
+  workspaceName: pade-gcp-014
+  updateMethod: coder update (stop/start) onto active v3
+  recordedUtc: 2026-11-07T05:12:30Z
+
+verifier:
+  wrapperSourceInTemplate: rc-inputs/verify-handoff/main.go
+  wrapperSourceInRepo: experiments/014-signed-validation-handoff/verify-handoff/main.go
+  wrapperSHA256: 2718de8c7d68356cd5ffd33d183af7f7d5223b87c7e0bbc7ea54e0a602c00930
+  api: github.com/runtimeconditions/rc-demos/validated-profile-handoff/handoff.Verify
+  rcDemosCommit: 853eab3c2c04f9d1059b2dbd64ea91996828a3a9
+  goRcProfilerCommit: 5d2e860e48842b89ec83414123a7e59228f61d36
+  go:
+    version: go1.26.10
+    tarball: go1.26.10.linux-amd64.tar.gz
+    sha256: ccfe7ae822d2c2f41f4fe7c956199967a4dac22d0ee0d2b2bfdb440aab3b20c5
+  obtain: fetch pinned public GitHub archives at startup; build locally (binary not embedded)
+  liveBinarySHA256: 725efb5212b153b943cd73f0a437e2dfc06c321acbb5dc09181814aec8a5cb98
+  failureClass: untrusted_handoff
+  failClosedBindingsOnFailure: true
+  note: |
+    One transient GitHub connect timeout appeared in the log during archive
+    fetch; curl --retry recovered and verification completed successfully.
+
+liveSuccess:
+  verifyOkFlag: ~/.coder-modules/after-certainty/rc-trusted-bindings/logs/verify.ok
+  logLines:
+    - checkpoint=014-4-verify-before-projection
+    - handoff_verified=true profile_sha256=53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19 bytes=1682
+    - projection_and_adapter=deferred_to_checkpoint_5
+    - verify_complete
+  verifiedProfile:
+    path: ~/.config/pade/rc-downstream/verified-profile.yaml
+    mode: "0600"
+    sha256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+    bytes: 1682
+    byteIdenticalToHandoffProfile: true
+  trustedKey:
+    path: ~/.config/pade/rc-downstream/trusted.pub
+    sha256: 2cf313dcc7b0733cdc164e8066dc8aff7134226ba64ed25f63bc48229b7749b6
+    outsideHandoffBundle: true
+  moduleManagedBindingsAfterVerify:
+    path: ~/.config/pade/coder-bindings.yaml
+    mode: "0600"
+    sha256: d055820dc8a34a7cfc756caca332a80498a7271531d3202c36263db61b65d4bb
+    capabilities: {}
+    note: |
+      CP4 intentionally does not project or invoke the Experiment 011 adapter.
+      Bindings remain the PADE-initialized empty map after successful verification.
+
+packagingSnapshot:
+  path: experiments/014-signed-validation-handoff/template-exp014_signed_handoff_v1/
+  note: template directory retained; live version name is exp014_signed_handoff_v3
+
+result: checkpoint-4-pass-live
+
+checkpoint4Result: |
+  Live Checkpoint 4 complete. gcp-pade@exp014_signed_handoff_v3 verifies the
+  durable signed handoff with rc-demos handoff.Verify before any projection.
+  verified-profile.yaml matches Case A bytes; bindings stay empty; 011 adapter
+  deferred to Checkpoint 5. Adversarial untrusted-handoff cases deferred to
+  Checkpoint 7.

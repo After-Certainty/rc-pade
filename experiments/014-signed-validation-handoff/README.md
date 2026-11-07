@@ -1,6 +1,6 @@
 # Experiment 014 — signed Runtime Conditions validation handoff into Coder
 
-**Status:** planned experiment / runbook only. No result is claimed until the steps below are executed and evidence is recorded.
+**Status:** Checkpoints 1–8 recorded. Core success met on live template `exp014_signed_handoff_v4` (workspaces `pade-gcp-014`, `pade-gcp-014-fresh`). Signed handoff verify precedes unchanged Experiment 011 project/bind; live read authorize / write deny unchanged.
 
 ## Question
 
@@ -165,6 +165,8 @@ Document which fields are:
 
 If the current rc-demos evidence cannot prove that the exact Profile consumed downstream is the Profile that was accepted upstream, stop and record the gap before integration work.
 
+**Checkpoint 1 recorded:** [`checkpoint-1-provenance.yaml`](checkpoint-1-provenance.yaml). Current `rc-demos` handoff already binds exact Profile bytes, resolved-extension digests, validation acceptance, and tool pins under Ed25519 evidence; no gap before producer work.
+
 ## Checkpoint 2 — producer-side signed handoff
 
 Use the current rc-demos validated-profile-handoff implementation, or the smallest compatible extraction of it, to produce a signed handoff for the same composed Case A Profile used in Experiments 009 and 011.
@@ -181,6 +183,8 @@ Record:
 - public verification key fingerprint or equivalent non-secret identifier.
 
 Never record the private signing key.
+
+**Checkpoint 2 recorded:** [`checkpoint-2-provenance.yaml`](checkpoint-2-provenance.yaml). Public [`producer-bundle/`](producer-bundle/) for Case A Profile `53fe0bca…` / 1682 bytes; `trusted.pub` only (no `signer.key`); verify script [`verify-producer-bundle.sh`](verify-producer-bundle.sh).
 
 ## Checkpoint 3 — durable delivery into fresh Coder
 
@@ -209,6 +213,8 @@ pade-coder:
   module-managed bindings path
   synchronization contract
 ```
+
+**Checkpoint 3 recorded:** [`checkpoint-3-provenance.yaml`](checkpoint-3-provenance.yaml). Template [`template-exp014_signed_handoff_v1/`](template-exp014_signed_handoff_v1/) embeds handoff + `trusted.pub` + operator policy/allowlist; live `exp014_signed_handoff_v2+` materializes under `~/.config/pade/rc-downstream/` with matching digests and no private key.
 
 ## Checkpoint 4 — verify before projection
 
@@ -241,6 +247,8 @@ trusted + supported demand, broker denies subject
     → authorization denied
 ```
 
+**Checkpoint 4 recorded:** [`checkpoint-4-provenance.yaml`](checkpoint-4-provenance.yaml). Live `exp014_signed_handoff_v3`: `handoff.Verify` before adapter; `handoff_verified=true` → `verified-profile.yaml` `53fe0bca…`; untrusted handoff fail-closes empty bindings.
+
 ## Checkpoint 5 — project and bind verified demand
 
 After successful handoff verification, reuse the existing rc-pade projection and Experiment 011 adapter semantics.
@@ -263,6 +271,8 @@ Use:
 - current `module.pade.scripts` synchronization contract.
 
 Verify mode `0600`, no credential Material, and replacement rather than merge of prior capabilities.
+
+**Checkpoint 5 recorded:** [`checkpoint-5-provenance.yaml`](checkpoint-5-provenance.yaml). Live `exp014_signed_handoff_v4`: post-verify 011 KnownFields report (`aceb19dc…`, not trust root) → adapter wrote broker-only `github.repo.read` + `github.repo.write` at mode `0600`, digest `4ce490e5…`.
 
 ## Checkpoint 6 — live fulfillment
 
@@ -287,6 +297,8 @@ Expected for the currently proven subject:
 - child does not receive write authority.
 
 This proves that signed validation evidence still does not grant PADE authority.
+
+**Checkpoint 6 recorded:** [`checkpoint-6-provenance.yaml`](checkpoint-6-provenance.yaml). From verified path on `pade-gcp-014`: `github.repo.read` → `repo_full_name=After-Certainty/after-certainty`; `github.repo.write` → broker resolve denied (http 403). Ambient provider credentials absent.
 
 ## Checkpoint 7 — adversarial handoff cases
 
@@ -319,6 +331,8 @@ At minimum:
 
 Do not collapse these outcomes into one generic failure if the evidence allows them to remain distinct.
 
+**Checkpoint 7 recorded:** [`checkpoint-7-provenance.yaml`](checkpoint-7-provenance.yaml). Cases 1–6 distinct: valid; profile digest mismatch; extension mismatch; corrupted signature; trusted+unsupported policy; broker write deny. Live bindings `4ce490e5…` unchanged after suite.
+
 ## Checkpoint 8 — restart / fresh-home proof
 
 Repeat the valid path on a genuinely fresh workspace/home using Experiment 013's durable delivery mechanism.
@@ -340,6 +354,10 @@ PADE read succeeds / unauthorized write remains denied
 ```
 
 No manual staging and no private signing key in the workspace.
+
+**Checkpoint 8 recorded:** [`checkpoint-8-provenance.yaml`](checkpoint-8-provenance.yaml).
+- **Restart** (`pade-gcp-014`): empty pade-coder bindings → automatic rematerialization → `handoff_verified` → bindings `4ce490e5…`.
+- **Fresh recreate** (`pade-gcp-014-fresh`): new disk; no manual staging; same digests; live read authorize + write deny (http 403); no `signer.key`.
 
 ## Evidence hygiene
 
@@ -367,6 +385,8 @@ Safe evidence includes:
 ## What success proves
 
 Experiment 014 succeeds when a fresh Coder workspace can consume a **signed upstream Runtime Conditions validation handoff**, verify that the exact artifacts it receives were accepted by the trusted upstream validation pipeline, and then use the unchanged rc-pade / Experiment 011 path for platform support evaluation, PADE binding generation, and broker authorization.
+
+This is the core success criterion for Experiment 014. It was met on `exp014_signed_handoff_v4` with restart and fresh-home proofs above.
 
 It should prove the independence of four decisions:
 

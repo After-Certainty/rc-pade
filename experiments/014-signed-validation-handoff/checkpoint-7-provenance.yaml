@@ -1,0 +1,128 @@
+# Experiment 014 — Checkpoint 7: adversarial handoff cases in the Coder/PADE chain.
+# Public evidence only. Never records private signing keys, JWTs, GitHub tokens,
+# AWS secrets, account IDs, or numeric Google subjects.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: docs/experiment-014-signed-validation-handoff
+  commitAtCapture: aa6f6b3d1a364147ef3f6fd3d28f20e78cfb4cd6
+  runbook: experiments/014-signed-validation-handoff/README.md
+
+coder:
+  workspaceName: pade-gcp-014
+  templateName: gcp-pade
+  templateVersionAtCapture: exp014_signed_handoff_v4
+  workDir: ~/.coder-modules/after-certainty/rc-trusted-bindings/cp7
+  recordedUtc: 2026-11-07T05:27:00Z
+
+method:
+  note: |
+    Cases 2–5 use isolated handoff copies and isolated adapter --output paths so
+    fail-closed behavior can be observed without destroying the live
+    module-managed happy path. Live bindings SHA confirmed unchanged after suite.
+  verifier: ~/.config/pade/rc-downstream/verify-handoff/verify-handoff
+  adapter: ~/.config/pade/rc-downstream/experiment-011-coder-rc-bindings
+  trustedPub: ~/.config/pade/rc-downstream/trusted.pub
+  goodHandoffCopy: cp7/good-handoff (from durable rc-downstream/handoff)
+
+liveBindingsIntact:
+  path: ~/.config/pade/coder-bindings.yaml
+  sha256: 4ce490e592a76c8a551951935a908c854d25f6a5b307faf57f123c829ee95743
+  unchangedAfterSuite: true
+
+cases:
+  1_validSignedHandoff:
+    how: verify good handoff; run 011 adapter with operator policy into isolated output
+    verifyRc: 0
+    verifyOut: "handoff_verified=true profile_sha256=53fe0bca… bytes=1682"
+    adapterRc: 0
+    adapterStdout: "experiment-011: wrote 2 broker-only capability bindings"
+    capabilityNames: [github.repo.read, github.repo.write]
+    mode: "0600"
+    result: pass
+    alsoProvenBy: checkpoint-5-provenance.yaml
+
+  2_profileModifiedAfterSigning:
+    how: |
+      Copy handoff; change workload.version demo→demx (valid YAML envelope,
+      same byte length); verify.
+    profileShaBefore: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+    profileShaAfter: 6c74849edb2febcbe7ede2fc11eca349c4b74ba0263e053e47a3453209392067
+    verifyRc: 1
+    failureClass: untrusted_handoff
+    verifierCategory: profile_digest_mismatch
+    detail: "Profile bytes differ from signed evidence"
+    verifiedProfileWritten: false
+    adapterInvoked: false
+    bindingsEmpty: true
+    result: pass
+    note: |
+      An earlier XOR of byte 0 produced profile_unusable (invalid YAML). The
+      recorded pass uses a semantic one-character mutation that keeps Envelope
+      usable and hits digest mismatch.
+
+  3_resolvedExtensionArtifactChanged:
+    how: flip last byte of env-configuration extension blob under evidenced filename
+    extensionFile: 36d3fb00f63f88f003e499153258522d6f8ea63677fb409a2cf3ffd5beb787dc.yaml
+    verifyRc: 1
+    failureClass: untrusted_handoff
+    verifierCategory: extension_mismatch
+    detail: "missing or changed content for …/env-configuration/v1alpha1/…"
+    adapterInvoked: false
+    bindingsEmpty: true
+    result: pass
+
+  4_corruptedSignature:
+    how: XOR first byte of evidence.sig (still 64 bytes)
+    verifyRc: 1
+    failureClass: untrusted_handoff
+    verifierCategory: evidence_untrusted
+    detail: "signature does not match configured trusted public key"
+    adapterInvoked: false
+    result: pass
+
+  4b_untrustedPublicKey:
+    how: verify good handoff against random 32-byte pubkey (not trusted.pub)
+    wrongPubSHA256: 5518eefbb34677ac2c7bfa46dfdea5ac6dd506eaec1cc75e1a492b1a9fbb0786
+    verifyRc: 1
+    failureClass: untrusted_handoff
+    verifierCategory: evidence_untrusted
+    adapterInvoked: false
+    result: pass
+
+  5_trustedButPlatformUnsupported:
+    how: |
+      Verify good handoff (success), then invoke 011 with a projection policy
+      that only marks api/http and google.analytics/web as outsidePADE and has
+      no source_control/git rule.
+    verifyRc: 0
+    handoffVerified: true
+    adapterRc: 1
+    adapterMessage: "unsupported Runtime Conditions demand: no projection rule matches source_control/git"
+    failureClass: platform_unsupported
+    distinctFromUntrustedHandoff: true
+    bindingsEmptyAfter: true
+    staleCapabilityCleared: true
+    result: pass
+
+  6_trustedSupportedButBrokerDenial:
+    how: reconfirm Checkpoint 6 live write probe
+    localBindingExisted: true
+    capability: github.repo.write
+    result: broker-denied
+    padeExec: "broker resolve denied (http 403)"
+    childDidNotRun: true
+    distinctFromUntrustedHandoff: true
+    distinctFromPlatformUnsupported: true
+    provenBy: checkpoint-6-provenance.yaml
+    resultPass: true
+
+distinctFailureClassesObserved:
+  - untrusted_handoff / profile_digest_mismatch
+  - untrusted_handoff / extension_mismatch
+  - untrusted_handoff / evidence_untrusted
+  - platform_unsupported (after trusted verify)
+  - broker-denied (after trusted verify + successful projection/binding)
+
+result: checkpoint-7-pass
+next: Checkpoint 8 — restart / fresh-home proof

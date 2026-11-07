@@ -1,0 +1,115 @@
+# Experiment 014 — Checkpoint 3: durable delivery packaging + live push.
+# Public evidence only. Never records private signing keys, JWTs, GitHub tokens,
+# AWS secrets, account IDs, or numeric Google subjects.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: docs/experiment-014-signed-validation-handoff
+  commitAtCapture: aa6f6b3d1a364147ef3f6fd3d28f20e78cfb4cd6
+  runbook: experiments/014-signed-validation-handoff/README.md
+  priorCheckpoints:
+    - experiments/014-signed-validation-handoff/checkpoint-1-provenance.yaml
+    - experiments/014-signed-validation-handoff/checkpoint-2-provenance.yaml
+
+scope:
+  mode: packaging-plus-live-materialization
+  liveTemplatePush: true
+  liveFreshWorkspaceMaterialization: true
+  verificationBeforeProjection: deferred_to_checkpoint_4
+  adapterInvocation: deferred_to_checkpoint_5
+
+derivedFrom:
+  experiment013TemplateSnapshot: experiments/013-coder-durable-rc-inputs/template-exp013_durable_inputs_v3/
+  padeCoderModuleRef: git::https://github.com/After-Certainty/pade-coder.git//modules/pade?ref=3e9184087665b2bc6ebe7d261d1fbbd88cf94b60
+
+packaging:
+  path: experiments/014-signed-validation-handoff/template-exp014_signed_handoff_v1/
+  tarSHA256ExcludingSnapshotAndDigests: 1f8b28ac479290803267fece8c496f0ee6d3e749e21df98b46d8cf0479b92a1a
+  fileDigests: experiments/014-signed-validation-handoff/template-exp014_signed_handoff_v1/FILE-DIGESTS.sha256
+  binaryEmbedFix: |
+    Terraform file() rejects non-UTF-8. evidence.sig and trusted.pub required
+    filebase64(...). All rc-input embeds use filebase64 for consistency.
+  coderTemplateArchiveLimitBytes: 1048576
+
+coder:
+  templateName: gcp-pade
+  failedImportVersion: exp014_signed_handoff_v1
+  failedImportReason: file() on binary evidence.sig and trusted.pub
+  liveTemplateVersion: exp014_signed_handoff_v2
+  liveTemplateActive: true
+  workspaceName: pade-gcp-014
+  workspaceFreshPersistentDisk: true
+  manualShellCopy: false
+  recordedUtc: 2026-11-07T05:05:44Z
+
+workspaceLayoutObserved:
+  root: ~/.config/pade/rc-downstream/
+  packagingOkFlag: ~/.coder-modules/after-certainty/rc-trusted-bindings/logs/packaging.ok
+  digestsMatchPackaging: true
+  paths:
+    - path: handoff/profile.yaml
+      owner: RC producer/CI
+      mode: "0600"
+      sha256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+    - path: handoff/evidence.json
+      owner: RC producer/CI
+      mode: "0600"
+      sha256: cf2e3c99a1178eb2200529e4747dc731652c29e509e47ac0f0cb6bdd783b5898
+    - path: handoff/evidence.sig
+      owner: RC producer/CI
+      mode: "0600"
+      sha256: da37c1cae3ab4c71c3d323ca402dfaca1701edb62266869344b5d78e5af0fee7
+    - path: handoff/extensions/<sha256>.yaml
+      owner: RC producer/CI
+      mode: "0600"
+      digests:
+        - 6f74ec92447e1997fadac6862f6dfc886bc42ea8ec73d1c4e2979d48d49bd157
+        - 36d3fb00f63f88f003e499153258522d6f8ea63677fb409a2cf3ffd5beb787dc
+        - db303fb46325eea8db4196ed83ad8ea6d91f5d49af3e226fea7cfaf1f8b5248d
+        - e6ab6b30b00cee3d345174a4aede0504f72013e5639b1aa23fc5e683995f704f
+    - path: trusted.pub
+      owner: platform operator
+      mode: "0644"
+      sha256: 2cf313dcc7b0733cdc164e8066dc8aff7134226ba64ed25f63bc48229b7749b6
+    - path: policy.yaml
+      owner: platform operator
+      mode: "0600"
+      sha256: a5f8f138e2ed5ca2d559d8711d7de50fadb0288c5c02532f8316c239a23007a4
+    - path: allow-capabilities.txt
+      owner: platform operator
+      mode: "0600"
+      sha256: 152d75d84cfffb6aa04e21658ae207a7dd4c092a0f2e4d2a762e784ba71b009c
+    - path: broker_binding.json
+      owner: pade-coder
+      source: module.pade.broker_binding
+      mode: "0600"
+      sha256: 9a3141de536be53cb472023eeb63c2575af37d6afff679c095202519837699ca
+      duplicatedOutsideModule: false
+    - path: SOURCE.txt
+      mode: "0600"
+      sha256: 7ca48034dba4180da6c59d3060da1b9d09fdff61d484a12c9a883053e7f8086c
+
+intentionallyAbsentOnFreshWorkspace:
+  - validation-report.yaml
+  - signer.key
+  - Experiment 011 adapter binary
+  - handoff verification step
+  - adapter-written capability bindings beyond PADE empty map
+
+coderScriptBehavior:
+  resource: coder_script.rc_trusted_bindings
+  displayName: RC Signed Handoff Inputs (014 CP3 packaging)
+  stillSyncWants: module.pade.scripts
+  stillMaterializesBrokerBindingFromModule: true
+  stopsAfter: durable materialization + presence checks
+  logLine: packaging_complete verify_and_adapter=deferred_to_checkpoint_4_5
+
+ownershipSeparationRecorded: true
+result: checkpoint-3-pass-live
+
+checkpoint3Result: |
+  Live Checkpoint 3 complete. Template gcp-pade@exp014_signed_handoff_v2 is
+  active. Fresh workspace pade-gcp-014 automatically materialized the signed
+  handoff bundle, operator trust/policy/allowlist, and module broker binding
+  with matching digests and no private key. Verification and 011 adapter remain
+  Checkpoint 4–5.

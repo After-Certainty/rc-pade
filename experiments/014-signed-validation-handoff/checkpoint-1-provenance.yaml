@@ -1,0 +1,159 @@
+# Experiment 014 — Checkpoint 1: define the artifacts being trusted.
+# Documentation / inspection only. No producer, verifier, or Coder integration
+# changes in this checkpoint.
+# Never records private signing keys, JWTs, GitHub tokens, AWS secrets,
+# account IDs, or numeric Google subjects.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: docs/experiment-014-signed-validation-handoff
+  commitAtCapture: aa6f6b3d1a364147ef3f6fd3d28f20e78cfb4cd6
+  runbook: experiments/014-signed-validation-handoff/README.md
+  dependency:
+    experiment: 013-coder-durable-rc-inputs
+    status: complete on main
+    reusableMechanism: durable Coder-template delivery of trusted inputs
+    newVariableIntroducedHere: cryptographic verification of upstream validation evidence
+
+rcDemos:
+  repository: https://github.com/runtimeconditions/rc-demos.git
+  upstreamPR: https://github.com/runtimeconditions/rc-demos/pull/5
+  mergeCommit: 853eab3c2c04f9d1059b2dbd64ea91996828a3a9
+  path: validated-profile-handoff/
+  inspected:
+    - validated-profile-handoff/README.md
+    - validated-profile-handoff/handoff/evidence.go
+    - validated-profile-handoff/handoff/consume.go
+    - validated-profile-handoff/cmd/validate/main.go
+    - validated-profile-handoff/internal/producer/producer.go
+
+stopCondition:
+  question: |
+    Can the current rc-demos evidence prove that the exact Profile consumed
+    downstream is the Profile that was accepted upstream?
+  result: pass
+  reason: |
+    Signed evidence.json includes profile_sha256. Verify() compares
+    SHA-256(profile.yaml bytes) to that digest after Ed25519 verification
+    under the independently provisioned public key. A post-sign Profile
+    modification yields profile_digest_mismatch and never reaches the consumer.
+
+# Minimum artifact set carried from trusted RC producer to Coder consumer.
+producerBundle:
+  format: rc-demos-handoff-experiment-1
+  signatureAlgorithm: Ed25519 detached over exact evidence.json bytes
+  files:
+    - path: profile.yaml
+      purpose: exact canonical Runtime Conditions Profile bytes
+      integrityCritical: true
+    - path: extensions/<sha256>.yaml
+      purpose: exact resolved extension definition bytes used by upstream validation
+      integrityCritical: true
+      note: |
+        Filenames are content digests, not extension identities. Extra
+        unreferenced files in a received directory are ignored by the verifier.
+    - path: evidence.json
+      purpose: signed claims binding Profile and resolved-extension digests
+      integrityCritical: true
+    - path: evidence.sig
+      purpose: raw Ed25519 signature over exact evidence.json bytes
+      integrityCritical: true
+
+evidenceFields:
+  experiment:
+    value: rc-demos-handoff-experiment-1
+    classification: integrity-critical
+    note: unrecognized format rejects as evidence_missing_or_malformed
+  profile_sha256:
+    classification: integrity-critical
+    proves: exact Profile bytes accepted upstream == Profile bytes verified downstream
+  validator:
+    value: github.com/runtimeconditions/go-rc-profiler/extensioncheck
+    classification: integrity-critical
+    note: fixed experiment contract marker; must match handoff.Validator
+  completed_calls:
+    value: [ResolveExtensionClosure, ValidateProfileYAML]
+    classification: integrity-critical
+    note: |
+      Validation acceptance is implicit. Producer signs only after both calls
+      succeed against private snapshots of the exact bytes recorded in evidence.
+      There is no accepted:true field in this format.
+  resolved_extensions:
+    classification: integrity-critical
+    binds: [{id: extension identity}, {sha256: exact definition bytes}]
+    verifierAlsoChecks: Profile extensions[] ID set equals signed ID set
+  producer_sha256:
+    classification: provenance-debugging
+    note: inspectable producer executable digest; not remote attestation
+
+# Outside the signed RC handoff — operator / platform local.
+platformLocal:
+  - item: Ed25519 public verification key / trust policy
+    owner: platform operator
+    note: never accepted from the untrusted bundle as trust anchor
+  - item: rc-pade projection policy.yaml
+    owner: platform operator
+  - item: capability allowlist
+    owner: platform operator
+  - item: module.pade.broker_binding and bindings_path
+    owner: pade-coder / module
+  - item: Experiment 011 adapter source/binary pins
+    owner: platform operator (durable via Experiment 013 mechanism)
+
+verifierInvariants:
+  order:
+    - Profile envelope usability (apiVersion/kind/conditions/extensions)
+    - evidence.json shape (DisallowUnknownFields; required calls present)
+    - evidence.sig under configured trusted public key
+    - Profile digest matches profile_sha256
+    - Profile extension IDs match signed resolved IDs
+    - each extensions/<sha256>.yaml content matches its digest
+  onSuccess: returns verified Profile bytes for downstream use (no second reopen)
+  distinctFailureCategories:
+    - profile_unusable
+    - evidence_missing_or_malformed
+    - evidence_untrusted
+    - profile_digest_mismatch
+    - extension_mismatch
+
+contrastWithExperiment013Inputs:
+  deliveredToday:
+    - profile.yaml (pinned Case A bytes)
+    - validation-report.yaml (unsigned adapter KnownFields shape)
+    - policy.yaml
+    - allow-capabilities.txt
+    - broker_binding from module.pade.broker_binding
+  notDeliveredToday:
+    - evidence.json / evidence.sig
+    - resolved extension definition blobs
+  adapterStillExpects:
+    path: experiments/011-coder-rc-bindings/main.go
+    shape: |
+      accepted, validator.module=rc-extension-resolver, validator.version,
+      profile.sha256, profile.bytes, per-condition validity
+    note: |
+      Checkpoint 1 does not change the adapter. Later checkpoints must decide
+      the smallest bridge from a verified signed handoff into the unchanged
+      011 path without inventing a new signing format or making pade-coder an
+      RC validator.
+
+openFollowOns:
+  - id: checkpoint-2
+    topic: produce signed handoff for the same Case A Profile used by 009/011/013
+  - id: bridge-to-011
+    topic: |
+      After verification, feed the unchanged 011 adapter without trusting an
+      unsigned locally staged validation-report as the handoff trust root.
+  - id: validator-identity
+    topic: |
+      Signed handoff currently pins go-rc-profiler/extensioncheck; 011 KnownFields
+      currently pins rc-extension-resolver. Record whichever producer path is
+      actually used; do not forge cross-validator acceptance.
+
+checkpoint1Result: |
+  The current rc-demos validated-profile-handoff contract already binds the
+  exact Profile bytes, resolved extension digests/IDs, implicit successful
+  upstream validation calls, and validator/experiment identity under a detached
+  Ed25519 signature. Platform trust policy, projection policy, allowlist, and
+  PADE broker binding remain outside the signed RC handoff. Stop condition
+  passed; proceed to Checkpoint 2 only after agreeing the producer-side step.
