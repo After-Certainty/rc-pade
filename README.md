@@ -2,18 +2,22 @@
 
 `rc-pade` is an experimental adapter that projects [Runtime Conditions](https://runtimeconditions.github.io/) demand into [PADE](https://github.com/After-Certainty/pade) `DevelopmentSession` intent.
 
-The experiment tests one architectural seam:
+The current boundary is:
 
 ```text
 application source
       ↓
-Runtime Conditions profiler
+Runtime Conditions profiler / composition
       ↓
 RuntimeConditionsProfile
       ↓
+Runtime Conditions validation / trusted handoff
+      ↓
+verified Profile bytes
+      ↓
 rc-pade + operator mapping policy
       ↓
-PADE DevelopmentSession
+PADE DevelopmentSession / Consumer bindings
       ↓
 PADE consumer / broker / provider
 ```
@@ -65,11 +69,31 @@ The real generated fixture also carries source-profile/workload provenance as an
 
 ## Run it
 
+Generate portable PADE session intent from a Profile:
+
 ```bash
 go run ./cmd/rc-pade generate \
   --profile examples/s3-put-object/runtime-conditions.yaml \
   --policy examples/s3-put-object/policy.yaml
 ```
+
+After an external Runtime Conditions trust/validation gate has accepted exact
+Profile bytes, generate fail-closed PADE Consumer bindings without passing
+validator-specific evidence into rc-pade:
+
+```bash
+go run ./cmd/rc-pade bind \
+  --verified-profile /path/to/verified-profile.yaml \
+  --policy /path/to/policy.yaml \
+  --broker-binding /path/to/broker.json \
+  --allow-capabilities github.repo.read,github.repo.write \
+  --output /absolute/path/to/bindings.yaml
+```
+
+The `bind` command does not validate Runtime Conditions and does not accept a
+validator module, validation report, signing format, or trust key. Its
+`--verified-profile` input is an explicit precondition supplied by the caller's
+trust boundary. See [Verified Profile → PADE bindings boundary](docs/verified-profile-bindings.md).
 
 Or with [mise](https://mise.jdx.dev/):
 
@@ -90,6 +114,7 @@ This repository intentionally keeps the first version narrow:
 - Unmapped conditions or operations fail closed rather than silently dropping authority requirements.
 - The adapter does not infer credentials, AWS account, Region, bucket identity, IAM actions, environment variables, or a provider binding.
 - The adapter does not provision resources.
+- Runtime Conditions validation and handoff trust remain outside the platform-support projection boundary.
 
 ## Why a separate adapter?
 
@@ -101,11 +126,14 @@ Keeping that opinion here lets both contracts evolve independently and makes the
 
 Very early experiment. The policy format (`rc-pade.local/v1alpha1`) is local to this repository and deliberately provisional.
 
-Interoperability proofs live under [`experiments/`](experiments/), from minimal RC→session fixtures through Coder/GCE identity (005C), composed rc-demos Profile consumption (006), and broker-mediated AWS S3 fulfillment (007). See the [experiment index](experiments/README.md). The current release compatibility baseline is [Experiment 012](experiments/012-pade-v041-compatibility/), testing PADE v0.4.1 against the original S3 projections without changing the original experiment evidence.
+Interoperability proofs live under [`experiments/`](experiments/), from minimal RC→session fixtures through Coder/GCE identity (005C), composed rc-demos Profile consumption (006), and broker-mediated AWS S3 fulfillment (007). See the [experiment index](experiments/README.md). Experiments 013 and 014 established durable fresh-workspace delivery and signed validation handoff; the reusable `bind` command is the follow-up cleanup that removes the validator-specific report dependency from the active binding boundary while preserving those experiments as historical evidence.
 
 ## Security boundary
 
 Projection requests authority; it does not grant it. Operator projection policies
 reject unknown fields, while Profiles retain extension-defined data and need a
-separate Runtime Conditions validation gate. See [security boundaries and the
-policy-decoding regression](docs/security-boundaries.md).
+separate Runtime Conditions validation/trust gate. The `bind` command starts by
+revoking the target bindings file to an empty capability map and leaves it empty
+on any later failure. See [security boundaries and the policy-decoding
+regression](docs/security-boundaries.md) and [Verified Profile → PADE bindings
+boundary](docs/verified-profile-bindings.md).
