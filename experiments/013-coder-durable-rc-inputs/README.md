@@ -1,6 +1,6 @@
 # Experiment 013 — durable trusted Runtime Conditions inputs for fresh Coder workspaces
 
-**Status:** planned experiment / runbook only. No result is claimed until the steps below are executed and evidence is recorded.
+**Status:** Checkpoint 1 recorded (ownership + durable source). Delivery and live proof not yet executed. No overall result is claimed until later checkpoints complete.
 
 ## Question
 
@@ -113,12 +113,14 @@ At minimum classify:
 
 | Input | Expected owner | Portable workload input? | Operator-controlled? | Durable source chosen |
 |---|---|---:|---:|---|
-| Runtime Conditions Profile | workload / trusted pipeline | yes | may be produced by trusted pipeline | TBD |
-| validation evidence | trusted validation pipeline | no | yes | TBD |
-| projection policy | platform operator | no | yes | TBD |
-| capability allowlist | platform operator | no | yes | TBD |
-| broker binding template | Coder / platform operator | no | yes | `module.pade.broker_binding` |
-| adapter | platform integration | no | yes | repository/module source |
+| Runtime Conditions Profile | workload / trusted pipeline | yes | may be produced by trusted pipeline | Coder template–pinned trusted bytes (011 B Case A) |
+| validation evidence | trusted validation pipeline | no | yes | Coder template–pinned projected report (011 B2) |
+| projection policy | platform operator | no | yes | Coder template (Terraform-controlled) |
+| capability allowlist | platform operator | no | yes | Coder template (Terraform-controlled) |
+| broker binding template | Coder / platform operator | no | yes | `module.pade.broker_binding` (already durable) |
+| adapter | platform integration | no | yes | pinned `rc-pade` revision via template script |
+
+**Checkpoint 1 recorded:** [`checkpoint-1-provenance.yaml`](checkpoint-1-provenance.yaml). Chosen mechanism: extend existing `coder_script.rc_trusted_bindings` so remaining inputs are materialized from operator-controlled template content the same way `broker_binding` already is. Ownership split is clear — continue.
 
 The chosen mechanism must not require a human to SSH into the workspace and recreate files after every fresh home.
 

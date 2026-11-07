@@ -1,0 +1,160 @@
+# Experiment 013 — Checkpoint 1: ownership and durable source.
+# No JWTs, GitHub tokens, AWS secrets, account IDs, or numeric Google subjects.
+# Documentation only. No template or delivery implementation in this checkpoint.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: docs/experiment-013-durable-rc-inputs
+  commitAtCapture: 552f3d47cb925c188f61df46c22adddd13af8187
+  runbook: experiments/013-coder-durable-rc-inputs/README.md
+
+padeCoder:
+  repository: https://github.com/After-Certainty/pade-coder.git
+  commit: 3e9184087665b2bc6ebe7d261d1fbbd88cf94b60
+  module: modules/pade
+  defaultPadeVersion: v0.4.1
+  defaultBrokerCapabilities: []
+  outputs: [broker_binding, bindings_path, scripts, pade_version]
+
+pade:
+  tag: v0.4.1
+  commit: 05fb036
+  binary: ~/.local/bin/pade
+  versionOutput: "pade version v0.4.1 (05fb036, built 2026-10-27T16:26:17Z)"
+
+broker:
+  endpoint: https://pade-broker-754719312452.us-central1.run.app
+  audience: https://pade-broker-754719312452.us-central1.run.app
+
+gce:
+  projectId: after-certainty
+  zone: us-central1-a
+  serviceAccountEmail: pade-coder-workspace@after-certainty.iam.gserviceaccount.com
+  identityAdapter: gce
+
+coder:
+  workspaceName: pade-gcp
+  templateName: gcp-pade
+  templateVersionAtCapture: lucky_morgan36
+  outdated: false
+  owns: workspace-lifecycle
+  isIdentityProvider: false
+  note: |
+    Inspection workspace is NOT a fresh home. Manual 011 restage still present
+    under ~/.config/pade/rc-downstream/. Checkpoint 2 must recreate/wipe.
+
+priorFinding:
+  source: experiments/011-coder-rc-bindings/checkpoint-a-provenance.yaml
+  a7: |
+    Fresh home leaves only broker_binding.json (written by coder_script from
+    module.pade.broker_binding). Adapter/profile/report/policy/allow missing
+    → STOP. Manual restage then regenerates module-managed bindings.
+
+inspectedTemplate:
+  pulledVersion: lucky_morgan36
+  padeModuleRef: git::https://github.com/After-Certainty/pade-coder.git//modules/pade?ref=3e9184087665b2bc6ebe7d261d1fbbd88cf94b60
+  broker_capabilities: []
+  trustedDownstream: coder_script.rc_trusted_bindings
+  alreadyDurable:
+    - module.pade.broker_binding materialized each start into rc-downstream/broker_binding.json
+    - coder_script + sync want of module.pade.scripts
+  notDurableToday:
+    - experiment-011-coder-rc-bindings (adapter binary)
+    - profile.yaml
+    - validation-report.yaml
+    - policy.yaml
+    - allow-capabilities.txt
+
+ownership:
+  - input: Runtime Conditions Profile
+    expectedOwner: workload / trusted pipeline
+    portableWorkloadInput: true
+    operatorControlled: produced-by-trusted-pipeline
+    durableSourceChosen: coder-template-pinned-bytes
+    plannedProofPin:
+      description: Experiment 011 Checkpoint B Case A composed Profile
+      bytes: 1682
+      sha256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+      observedLocalPathAtCapture: .work/experiment-011-checkpoint-b/case-a/composed.profile.yaml
+    note: Portable demand. Template pins exact trusted bytes for the experiment; not rewritten from unchecked workspace repo content at runtime.
+
+  - input: validation evidence
+    expectedOwner: trusted validation pipeline
+    portableWorkloadInput: false
+    operatorControlled: true
+    durableSourceChosen: coder-template-pinned-bytes
+    plannedProofPin:
+      description: Experiment 011 Checkpoint B projected adapter-shaped report
+      path: experiments/011-coder-rc-bindings/checkpoint-b/projected-validation-report.yaml
+      bytes: 442
+      sha256: aceb19dc7cc6717aa962fa088192388731a88e60f262e3a6a2264fa00dedb20f
+      boundProfileSha256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+    note: Must remain byte-bound to the Profile. Signed cross-system provenance is Experiment 014.
+
+  - input: projection policy
+    expectedOwner: platform operator
+    portableWorkloadInput: false
+    operatorControlled: true
+    durableSourceChosen: coder-template-terraform-controlled
+    plannedProofPin:
+      path: experiments/008-rc-field-projection/policy.yaml
+      sha256: a5f8f138e2ed5ca2d559d8711d7de50fadb0288c5c02532f8316c239a23007a4
+    note: Operator-owned. Delivered from template content at push time so workspace git tip cannot rewrite it.
+
+  - input: capability allowlist
+    expectedOwner: platform operator
+    portableWorkloadInput: false
+    operatorControlled: true
+    durableSourceChosen: coder-template-terraform-controlled
+    plannedProofPin:
+      allowCapabilities: [github.repo.read, github.repo.write]
+    note: Operator-owned. Same template delivery boundary as projection policy.
+
+  - input: broker binding template
+    expectedOwner: Coder / platform operator
+    portableWorkloadInput: false
+    operatorControlled: true
+    durableSourceChosen: module.pade.broker_binding
+    alreadyImplemented: true
+    note: Do not duplicate endpoint/audience/identity outside the module output.
+
+  - input: adapter
+    expectedOwner: platform integration
+    portableWorkloadInput: false
+    operatorControlled: true
+    durableSourceChosen: pinned-rc-pade-revision-via-template
+    plannedProofPin:
+      path: experiments/011-coder-rc-bindings
+      obtainHow: build-or-fetch at pinned rc-pade commit during startup from operator-controlled template script
+    note: Must not depend on a leftover binary under a wiped home.
+
+chosenMechanism:
+  name: extend-existing-coder_script.rc_trusted_bindings
+  rationale: |
+    Smallest reliable source-of-truth already in use. The template already
+    materializes broker_binding from Terraform and fail-closes when other
+    inputs are absent. Checkpoint 1 selects the same Coder/Terraform delivery
+    path for the remaining operator-owned and pinned trusted inputs rather
+    than introducing a general config/secret platform.
+  requirements:
+    - delivery through Coder/platform integration, not manual shell copy
+    - repository-controlled workload content alone cannot rewrite policy or allowlist
+    - broker coordinates still come only from module.pade.broker_binding
+    - local materializations use restrictive permissions (0600)
+    - failure to retrieve any required trusted input leaves PADE bindings empty
+  notChosen:
+    - unpinned clone of workspace rc-pade tip as operator policy source
+    - SSH/manual restage into ~/.config/pade/rc-downstream/
+    - general-purpose secret/config distribution platform
+
+stopCondition:
+  ambiguityBetweenWorkloadDemandAndOperatorPolicy: false
+  verdict: continue
+  note: |
+    Profile remains portable workload demand. Policy and allowlist remain
+    operator-owned and template-controlled. Broker binding remains module
+    output. No Checkpoint 1 stop.
+
+result: checkpoint-1-recorded
+recordedUtc: 2026-11-07T03:59:11Z
+next: Checkpoint 2 — provision a completely fresh workspace (no implementation of delivery yet beyond recording this design)
