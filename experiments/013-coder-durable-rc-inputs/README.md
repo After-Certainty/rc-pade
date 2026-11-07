@@ -1,6 +1,6 @@
 # Experiment 013 — durable trusted Runtime Conditions inputs for fresh Coder workspaces
 
-**Status:** Checkpoints 1–6 recorded on `pade-gcp-013` / `exp013_durable_inputs_v3`. Delivery, handoff, live read/deny, and fail-closed failure cases proven. Restart/recreate remains.
+**Status:** Checkpoints 1–7 recorded. Core success met: fresh workspace `pade-gcp-013-fresh` / `exp013_durable_inputs_v3` obtained trusted inputs automatically (no manual staging), regenerated module-managed bindings, and preserved the `github.repo.read` / write-deny boundary.
 
 ## Question
 
@@ -274,6 +274,10 @@ Expected:
 - the same read/deny boundary still holds.
 
 This is the core success criterion for Experiment 013.
+
+**Checkpoint 7 recorded:** [`checkpoint-7-provenance.yaml`](checkpoint-7-provenance.yaml).
+- **Restart** (`pade-gcp-013`): pade-coder empty map → automatic rematerialization → adapter regenerated bindings (`4ce490e5…`).
+- **Fresh recreate** (`pade-gcp-013-fresh`): new disk; no manual staging; same digests/bindings; live read authorize + write deny (http 403).
 
 ## Evidence hygiene
 

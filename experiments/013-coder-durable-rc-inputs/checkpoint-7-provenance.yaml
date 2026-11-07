@@ -1,0 +1,79 @@
+# Experiment 013 — Checkpoint 7: restart + full recreate/fresh home.
+# No JWTs, GitHub tokens, AWS secrets, account IDs, or numeric Google subjects.
+# Core success criterion for Experiment 013.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: docs/experiment-013-durable-rc-inputs
+  commitAtCapture: 64a67b5
+  runbook: experiments/013-coder-durable-rc-inputs/README.md
+
+template:
+  name: gcp-pade
+  version: exp013_durable_inputs_v3
+
+restartWithPersistentTrustedSource:
+  workspaceName: pade-gcp-013
+  hostname: coder-ksteffe-pade-gcp-013-root
+  method: coder restart (persistent disk retained)
+  observedStartupOrder:
+    - pade-coder dynamic install cleared/initialized module bindings to empty map
+    - bindings_before_adapter_sha256: d055820dc8a34a7cfc756caca332a80498a7271531d3202c36263db61b65d4bb
+    - trusted inputs rematerialized automatically from template + pinned fetch/build
+    - Experiment 011 adapter regenerated module-managed bindings
+    - bindings_after_adapter_sha256: 4ce490e592a76c8a551951935a908c854d25f6a5b307faf57f123c829ee95743
+    - coder_script sync complete
+  capabilityNamesAfter: [github.repo.read, github.repo.write]
+  manualStaging: false
+  result: pass
+
+fullRecreateFreshHome:
+  workspaceName: pade-gcp-013-fresh
+  hostname: coder-ksteffe-pade-gcp-013-fresh-root
+  method: coder create new workspace (new persistent disk) from exp013_durable_inputs_v3
+  copyParametersFrom: pade-gcp-013
+  freshHome: true
+  manualStaging: false
+  topLevelNonDotEntries: 1
+  note: |
+    Home contained only toolchain/dot dirs created by startup (no prior
+    rc-downstream restage, no checked-out experiment tree required for handoff).
+  durableDelivery:
+    profileSha256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+    validationReportSha256: aceb19dc7cc6717aa962fa088192388731a88e60f262e3a6a2264fa00dedb20f
+    policySha256: a5f8f138e2ed5ca2d559d8711d7de50fadb0288c5c02532f8316c239a23007a4
+    allowlistSha256: 152d75d84cfffb6aa04e21658ae207a7dd4c092a0f2e4d2a762e784ba71b009c
+    adapterBuiltFromPinnedCommit: fd592a4c826fb6b8f005c11625122138c797ae63
+    goFetchedPinned: go1.26.10
+    brokerBindingFromModuleOutputOnly: true
+  moduleManagedBindings:
+    path: /home/ksteffe/.config/pade/coder-bindings.yaml
+    mode: "0600"
+    sha256: 4ce490e592a76c8a551951935a908c854d25f6a5b307faf57f123c829ee95743
+    capabilityNames: [github.repo.read, github.repo.write]
+  liveAuthorizationBoundary:
+    github.repo.read:
+      result: authorized
+      childObservation: "repo_full_name=After-Certainty/after-certainty"
+      tokenPresentInChildOnly: true
+      tokenValueRecorded: false
+      exit: 0
+    github.repo.write:
+      result: broker-denied
+      padeExec: "broker resolve denied (http 403)"
+      childDidNotRun: true
+      exit: 1
+  ambientCredentials:
+    GITHUB_TOKEN: unset
+    AWS_ACCESS_KEY_ID: unset
+    gh_hosts_yml: absent
+  result: pass
+
+cliNote: |
+  Early coder ssh to pade-gcp-013-fresh failed while the agent/startup scripts
+  were still running (Go download/build). UI SSH worked; CLI SSH succeeded once
+  the workspace was healthy. Delivery had already completed by then.
+
+result: checkpoint-7-pass
+experiment013CoreSuccessCriterion: met
+recordedUtc: 2026-11-07T04:33:33Z
