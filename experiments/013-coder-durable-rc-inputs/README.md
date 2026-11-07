@@ -1,6 +1,6 @@
 # Experiment 013 — durable trusted Runtime Conditions inputs for fresh Coder workspaces
 
-**Status:** Checkpoints 1–2 recorded. Fresh workspace baseline proven on `pade-gcp-013` (empty bindings; operator inputs absent; RC script STOP). Delivery and live proof not yet executed.
+**Status:** Checkpoints 1–3 recorded. Durable template delivery proven on `pade-gcp-013` / `exp013_durable_inputs_v3` (fixtures + pinned adapter build; no manual staging). Live fulfillment evidence remains Checkpoint 4/5.
 
 ## Question
 
@@ -118,7 +118,7 @@ At minimum classify:
 | projection policy | platform operator | no | yes | Coder template (Terraform-controlled) |
 | capability allowlist | platform operator | no | yes | Coder template (Terraform-controlled) |
 | broker binding template | Coder / platform operator | no | yes | `module.pade.broker_binding` (already durable) |
-| adapter | platform integration | no | yes | pinned `rc-pade` revision via template script |
+| adapter | platform integration | no | yes | pinned `rc-pade` commit fetch + pinned Go build (template archive ≤1MiB) |
 
 **Checkpoint 1 recorded:** [`checkpoint-1-provenance.yaml`](checkpoint-1-provenance.yaml). Chosen mechanism: extend existing `coder_script.rc_trusted_bindings` so remaining inputs are materialized from operator-controlled template content the same way `broker_binding` already is. Ownership split is clear — continue.
 
@@ -158,6 +158,8 @@ Requirements:
 - failure to retrieve any required trusted input must leave PADE bindings empty.
 
 Record source identifiers, revisions/digests, and resulting local paths without recording secret Material.
+
+**Checkpoint 3 recorded:** [`checkpoint-3-provenance.yaml`](checkpoint-3-provenance.yaml). Template `exp013_durable_inputs_v3` materializes Profile/report/policy/allowlist from embedded `rc-inputs/` (mode `0600`, digests match fixtures), builds the Experiment 011 adapter from pinned `rc-pade` @ `fd592a4` with pinned Go `1.26.10`, and keeps broker binding on `module.pade.broker_binding` only. No manual shell copy. Fixtures live under [`fixtures/`](fixtures/).
 
 ## Checkpoint 4 — run the unchanged Experiment 011 handoff
 
