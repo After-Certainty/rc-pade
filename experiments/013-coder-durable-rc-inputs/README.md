@@ -1,6 +1,6 @@
 # Experiment 013 — durable trusted Runtime Conditions inputs for fresh Coder workspaces
 
-**Status:** Checkpoints 1–3 recorded. Durable template delivery proven on `pade-gcp-013` / `exp013_durable_inputs_v3` (fixtures + pinned adapter build; no manual staging). Live fulfillment evidence remains Checkpoint 4/5.
+**Status:** Checkpoints 1–5 recorded on `pade-gcp-013` / `exp013_durable_inputs_v3`. Durable delivery → module-managed 011 handoff → live `github.repo.read` authorize / `github.repo.write` deny. Failure cases and recreate remain.
 
 ## Question
 
@@ -185,6 +185,8 @@ Verify the resulting module-managed file:
 - no credential Material;
 - no stale capabilities.
 
+**Checkpoint 4 recorded:** [`checkpoint-4-provenance.yaml`](checkpoint-4-provenance.yaml). Real `module.pade.bindings_path` mode `0600`; capabilities `github.repo.read` + `github.repo.write` broker-only; `pade` validate/plan/capabilities OK; no credential material; no temp bindings path.
+
 ## Checkpoint 5 — live fulfillment
 
 Use the currently supported fresh-validation path from Experiment 011 Checkpoint B unless a newer equivalent exists.
@@ -216,6 +218,8 @@ Expected for the currently proven subject:
 The purpose is to verify the automatically delivered trusted inputs reach the already-proven authorization boundary unchanged.
 
 Do not expand broker authorization just to produce a positive write result.
+
+**Checkpoint 5 recorded:** [`checkpoint-5-provenance.yaml`](checkpoint-5-provenance.yaml). `github.repo.read` → `repo_full_name=After-Certainty/after-certainty` (token in child only). `github.repo.write` → broker resolve denied (http 403); child did not run. Ambient provider credentials absent.
 
 ## Checkpoint 6 — failure cases
 
