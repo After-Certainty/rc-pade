@@ -1,6 +1,10 @@
+//go:build ignore
+
 // verify-handoff checks an rc-demos validated-profile-handoff bundle under a
 // configured public key, then writes the verified Profile bytes.
 // It is not an RC validator and does not project or bind PADE capabilities.
+// Built against a pinned rc-demos checkout in the Coder template/script, not
+// as part of the rc-pade module (see //go:build ignore).
 package main
 
 import (

@@ -346,7 +346,8 @@ resource "coder_script" "rc_trusted_bindings" {
 
     VERIFY_CMD_DIR="$RC_DEMOS_DIR/validated-profile-handoff/cmd/exp014-verify"
     mkdir -p "$VERIFY_CMD_DIR"
-    cp "$INPUT_DIR/verify-handoff/main.go" "$VERIFY_CMD_DIR/main.go"
+    # Strip repo-only //go:build ignore so this compiles inside the pinned rc-demos module.
+    grep -v '^//go:build ignore$' "$INPUT_DIR/verify-handoff/main.go" > "$VERIFY_CMD_DIR/main.go"
     VERIFY_BIN="$INPUT_DIR/verify-handoff/verify-handoff"
     say "building_verifier src=$VERIFY_CMD_DIR"
     (
