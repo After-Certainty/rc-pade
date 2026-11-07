@@ -13,16 +13,28 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 2 || os.Args[1] != "generate" {
+	if len(os.Args) < 2 {
 		usage()
 		os.Exit(2)
 	}
 
+	switch os.Args[1] {
+	case "generate":
+		runGenerate(os.Args[2:])
+	case "bind":
+		runBindCommand(os.Args[2:])
+	default:
+		usage()
+		os.Exit(2)
+	}
+}
+
+func runGenerate(args []string) {
 	fs := flag.NewFlagSet("generate", flag.ExitOnError)
 	profilePath := fs.String("profile", "", "path to a RuntimeConditionsProfile YAML file")
 	policyPath := fs.String("policy", "", "path to an rc-pade ProjectionPolicy YAML file")
 	name := fs.String("name", "", "override PADE metadata.name")
-	_ = fs.Parse(os.Args[2:])
+	_ = fs.Parse(args)
 
 	if *profilePath == "" || *policyPath == "" {
 		fs.Usage()
@@ -76,5 +88,7 @@ func fatal(err error) {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: rc-pade generate --profile runtime-conditions.yaml --policy policy.yaml [--name session-name]")
+	fmt.Fprintln(os.Stderr, "usage:")
+	fmt.Fprintln(os.Stderr, "  rc-pade generate --profile runtime-conditions.yaml --policy policy.yaml [--name session-name]")
+	fmt.Fprintln(os.Stderr, "  rc-pade bind --verified-profile verified-profile.yaml --policy policy.yaml --broker-binding broker.json --allow-capabilities cap.one,cap.two --output /absolute/bindings.yaml [--session-out /absolute/session.yaml]")
 }
