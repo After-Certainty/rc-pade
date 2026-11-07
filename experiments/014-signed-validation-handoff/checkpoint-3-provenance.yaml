@@ -23,9 +23,11 @@ derivedFrom:
   padeCoderModuleRef: git::https://github.com/After-Certainty/pade-coder.git//modules/pade?ref=3e9184087665b2bc6ebe7d261d1fbbd88cf94b60
 
 packaging:
-  path: experiments/014-signed-validation-handoff/template-exp014_signed_handoff_v1/
+  path: experiments/014-signed-validation-handoff/template-exp014_signed_handoff_v4/
+  renamedFrom: template-exp014_signed_handoff_v1
+  note: retained final snapshot pulled from live gcp-pade@exp014_signed_handoff_v4; see SNAPSHOT.md
   tarSHA256ExcludingSnapshotAndDigests: 1f8b28ac479290803267fece8c496f0ee6d3e749e21df98b46d8cf0479b92a1a
-  fileDigests: experiments/014-signed-validation-handoff/template-exp014_signed_handoff_v1/FILE-DIGESTS.sha256
+  fileDigests: experiments/014-signed-validation-handoff/template-exp014_signed_handoff_v4/FILE-DIGESTS.sha256
   binaryEmbedFix: |
     Terraform file() rejects non-UTF-8. evidence.sig and trusted.pub required
     filebase64(...). All rc-input embeds use filebase64 for consistency.

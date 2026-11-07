@@ -1,11 +1,14 @@
 ---
 display_name: Google Compute Engine (Linux)
-description: GCE Coder workspaces with signed RC handoff verify then PADE bindings (Experiment 014 Checkpoint 5).
+description: GCE Coder workspaces with signed RC handoff verify then PADE bindings (Experiment 014).
 ---
 
 # gcp-pade (Experiment 014)
 
 Current live version: `exp014_signed_handoff_v4`.
+
+Exact source for that version is retained in this directory. See [`SNAPSHOT.md`](SNAPSHOT.md)
+for the `coder templates pull` capture method and the small repo-only `//go:build ignore` hygiene.
 
 On start:
 

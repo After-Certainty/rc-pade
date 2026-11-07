@@ -71,7 +71,7 @@ liveSuccess:
       Bindings remain the PADE-initialized empty map after successful verification.
 
 packagingSnapshot:
-  path: experiments/014-signed-validation-handoff/template-exp014_signed_handoff_v1/
+  path: experiments/014-signed-validation-handoff/template-exp014_signed_handoff_v4/
   note: template directory retained; live version name is exp014_signed_handoff_v3
 
 result: checkpoint-4-pass-live

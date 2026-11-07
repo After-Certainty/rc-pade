@@ -1,6 +1,6 @@
 # Experiment 014 — signed Runtime Conditions validation handoff into Coder
 
-**Status:** Checkpoints 1–8 recorded. Core success met on live template `exp014_signed_handoff_v4` (workspaces `pade-gcp-014`, `pade-gcp-014-fresh`). Signed handoff verify precedes unchanged Experiment 011 project/bind; live read authorize / write deny unchanged.
+**Status:** Checkpoints 1–8 recorded; PR review hardening applied (live untrusted-handoff fail-closed on module bindings, exact `exp014_signed_handoff_v4` template pull snapshot, explicit scope note). Core success met on `exp014_signed_handoff_v4` (workspaces `pade-gcp-014`, `pade-gcp-014-fresh`).
 
 ## Question
 
@@ -214,7 +214,7 @@ pade-coder:
   synchronization contract
 ```
 
-**Checkpoint 3 recorded:** [`checkpoint-3-provenance.yaml`](checkpoint-3-provenance.yaml). Template [`template-exp014_signed_handoff_v1/`](template-exp014_signed_handoff_v1/) embeds handoff + `trusted.pub` + operator policy/allowlist; live `exp014_signed_handoff_v2+` materializes under `~/.config/pade/rc-downstream/` with matching digests and no private key.
+**Checkpoint 3 recorded:** [`checkpoint-3-provenance.yaml`](checkpoint-3-provenance.yaml). Template embeds handoff + `trusted.pub` + operator policy/allowlist; live `exp014_signed_handoff_v2+` materializes under `~/.config/pade/rc-downstream/` with matching digests and no private key. Final retained source: [`template-exp014_signed_handoff_v4/`](template-exp014_signed_handoff_v4/) (exact pull of live `exp014_signed_handoff_v4`; see [`SNAPSHOT.md`](template-exp014_signed_handoff_v4/SNAPSHOT.md)).
 
 ## Checkpoint 4 — verify before projection
 
@@ -331,7 +331,7 @@ At minimum:
 
 Do not collapse these outcomes into one generic failure if the evidence allows them to remain distinct.
 
-**Checkpoint 7 recorded:** [`checkpoint-7-provenance.yaml`](checkpoint-7-provenance.yaml). Cases 1–6 distinct: valid; profile digest mismatch; extension mismatch; corrupted signature; trusted+unsupported policy; broker write deny. Live bindings `4ce490e5…` unchanged after suite.
+**Checkpoint 7 recorded:** [`checkpoint-7-provenance.yaml`](checkpoint-7-provenance.yaml). Cases 1–6 distinct: valid; profile digest mismatch; extension mismatch; corrupted signature; trusted+unsupported policy; broker write deny. Live bindings `4ce490e5…` unchanged after suite. Live module-path fail-closed: [`checkpoint-7-live-untrusted-provenance.yaml`](checkpoint-7-live-untrusted-provenance.yaml) (corrupted `evidence.sig` → real bindings stay `capabilities: {}`, sync incomplete; restore `exp014_signed_handoff_v4` regenerates).
 
 ## Checkpoint 8 — restart / fresh-home proof
 
@@ -399,6 +399,14 @@ It should prove the independence of four decisions:
 
 A successful experiment must keep those answers independently observable.
 
+## Scope / remaining findings
+
+Two validator seams stay explicit so 014 does not overclaim:
+
+1. **Producer catalog adaptation.** The signed handoff was produced with an experiment-local source-control extension adaptation (`rc.source_control` → `source_control`) because stock `runtimeconditions/extensions@1f24b88` is rejected by `go-rc-profiler/extensioncheck` for the unchanged Case A Profile. Experiment 014 proves signed integrity/verification over those **exact adapted extension bytes**, not that the stock catalog currently validates Case A under that validator.
+
+2. **011 compatibility report remains.** After signed verification, the unchanged Experiment 011 adapter still requires the operator-pinned `rc-extension-resolver` KnownFields report (`aceb19dc…`). That report is **not** the handoff trust root; signed evidence is. It is still a compatibility/precondition dependency of the unchanged adapter. So 014 proves that **signed verification gates the 011 path**; it does **not** eliminate the local validation-report contract entirely. Trust in the upstream handoff moved to the signed evidence, while the old report remains as a redundant compatibility gate for 011.
+
 ## What success does not prove
 
 It does not establish:
@@ -407,7 +415,9 @@ It does not establish:
 - production key management/rotation;
 - universal provenance requirements;
 - a mandatory validation service architecture;
-- PADE as part of Runtime Conditions.
+- PADE as part of Runtime Conditions;
+- that the local 011 KnownFields report dependency is gone;
+- that stock extension catalogs validate Case A without the producer adaptation above.
 
 It is implementation evidence for a scalable trust boundary.
 
