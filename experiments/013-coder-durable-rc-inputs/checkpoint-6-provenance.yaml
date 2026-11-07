@@ -24,13 +24,25 @@ method:
 
 cases:
   1_durableSourceUnavailable:
-    how: curl pinned GitHub archive URL with nonexistent commit SHA
+    how: |
+      Live startup on non-active template version exp013_cp6_broken_fetch
+      (rc_pade_adapter_commit all zeros). Fixtures materialize; pinned archive
+      fetch returns HTTP 404; adapter is not invoked; sync does not complete;
+      real module-managed bindings remain capabilities: {} mode 0600. Workspace
+      then updated to active exp013_durable_inputs_v3 and regenerated successfully.
+      Detail: checkpoint-6-case1-live-provenance.yaml
+    priorSyntheticNote: |
+      An earlier isolated curl-only check existed; superseded by this live
+      module-path lifecycle proof.
     curlExit: 22
+    httpStatus: 404
     adapterInvoked: false
-    bindingsPath: cp6/case1-bindings.yaml
+    syncComplete: false
+    moduleManagedBindingsPath: ~/.config/pade/coder-bindings.yaml
     usableBindings: false
     emptyCapabilities: true
     mode0600: true
+    restoredValidTemplateAndRegenerated: true
     result: pass
 
   2_missingProjectionPolicy:

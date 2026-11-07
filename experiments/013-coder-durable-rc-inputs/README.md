@@ -1,6 +1,6 @@
 # Experiment 013 — durable trusted Runtime Conditions inputs for fresh Coder workspaces
 
-**Status:** Checkpoints 1–7 recorded. Core success met: fresh workspace `pade-gcp-013-fresh` / `exp013_durable_inputs_v3` obtained trusted inputs automatically (no manual staging), regenerated module-managed bindings, and preserved the `github.repo.read` / write-deny boundary.
+**Status:** Checkpoints 1–7 recorded; PR review hardening applied (template source snapshot, live CP6 durable-source failure on module bindings, explicit scope note). Core success met on `exp013_durable_inputs_v3`.
 
 ## Question
 
@@ -159,7 +159,7 @@ Requirements:
 
 Record source identifiers, revisions/digests, and resulting local paths without recording secret Material.
 
-**Checkpoint 3 recorded:** [`checkpoint-3-provenance.yaml`](checkpoint-3-provenance.yaml). Template `exp013_durable_inputs_v3` materializes Profile/report/policy/allowlist from embedded `rc-inputs/` (mode `0600`, digests match fixtures), builds the Experiment 011 adapter from pinned `rc-pade` @ `fd592a4` with pinned Go `1.26.10`, and keeps broker binding on `module.pade.broker_binding` only. No manual shell copy. Fixtures live under [`fixtures/`](fixtures/).
+**Checkpoint 3 recorded:** [`checkpoint-3-provenance.yaml`](checkpoint-3-provenance.yaml). Template `exp013_durable_inputs_v3` materializes Profile/report/policy/allowlist from embedded `rc-inputs/` (mode `0600`, digests match fixtures), builds the Experiment 011 adapter from pinned `rc-pade` @ `fd592a4` with pinned Go `1.26.10`, and keeps broker binding on `module.pade.broker_binding` only. No manual shell copy. Fixtures live under [`fixtures/`](fixtures/). Exact template source used for the proof is preserved under [`template-exp013_durable_inputs_v3/`](template-exp013_durable_inputs_v3/).
 
 ## Checkpoint 4 — run the unchanged Experiment 011 handoff
 
@@ -240,7 +240,7 @@ From fresh or restarted workspaces, test at least:
 
 Do not weaken validation or fail-closed behavior to make startup continue.
 
-**Checkpoint 6 recorded:** [`checkpoint-6-provenance.yaml`](checkpoint-6-provenance.yaml). All six cases left no usable bindings (empty `capabilities: {}`, mode `0600`). Tamper/mismatch and empty-policy rejects used the unchanged 011 adapter; durable-fetch failure did not invoke the adapter. Module-managed happy-path bindings restored afterward.
+**Checkpoint 6 recorded:** [`checkpoint-6-provenance.yaml`](checkpoint-6-provenance.yaml). All six cases left no usable bindings (empty `capabilities: {}`, mode `0600`). Case 1 has a live module-path proof ([`checkpoint-6-case1-live-provenance.yaml`](checkpoint-6-case1-live-provenance.yaml)): broken adapter-source pin → real `coder-bindings.yaml` stays empty, sync incomplete, then valid template restore regenerates. Cases 2–6 use the unchanged 011 adapter fail-closed contract.
 
 ## Checkpoint 7 — restart and recreate
 
@@ -313,6 +313,17 @@ It should establish:
 - that the existing downstream authorization boundary remains unchanged.
 
 It does **not** prove a signed cross-system validation handoff. That is intentionally reserved for Experiment 014.
+
+## Scope and remaining findings
+
+Experiment 013 proves that **template-pinned trusted bytes** (plus a pinned adapter source commit/Go toolchain) are a durable, operator-controlled source for this experiment and survive fresh-home recreation and restart.
+
+It does **not** yet prove a general workload publication / discovery / update mechanism in which arbitrary changing Profiles are delivered from a workload or trusted pipeline **without republishing the Coder template**. Treat Profile/evidence pins here as an experiment-grade durable source-of-truth, not as the final production distribution architecture.
+
+Related artifacts for audit:
+
+- template source snapshot: [`template-exp013_durable_inputs_v3/`](template-exp013_durable_inputs_v3/)
+- fixture digest check: [`verify-fixtures.sh`](verify-fixtures.sh) (`bash experiments/013-coder-durable-rc-inputs/verify-fixtures.sh`)
 
 ## Suggested Cursor workflow
 

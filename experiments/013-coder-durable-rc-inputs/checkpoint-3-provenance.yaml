@@ -38,6 +38,10 @@ chosenMechanismNotes:
     Go toolchain (sha256-verified) and the public rc-pade GitHub archive at a
     pinned commit, then builds experiments/011-coder-rc-bindings.
   brokerStillFromModuleOutputOnly: true
+  templateSourceSnapshot: experiments/013-coder-durable-rc-inputs/template-exp013_durable_inputs_v3/
+  templateSourceSnapshotNote: |
+    Sanitized pull of gcp-pade @ exp013_durable_inputs_v3 preserved for audit
+    (added in PR review hardening; matches the live proof template version).
 
 pins:
   rcPadeAdapterCommit: fd592a4c826fb6b8f005c11625122138c797ae63
