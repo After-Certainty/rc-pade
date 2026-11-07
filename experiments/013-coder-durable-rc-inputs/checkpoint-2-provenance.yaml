@@ -1,0 +1,110 @@
+# Experiment 013 — Checkpoint 2: completely fresh workspace baseline.
+# No JWTs, GitHub tokens, AWS secrets, account IDs, or numeric Google subjects.
+# Delivery implementation not yet introduced (still lucky_morgan36 template).
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: docs/experiment-013-durable-rc-inputs
+  commitAtCapture: 23a7e159177417e47ebea1e22146c3475c90681c
+  runbook: experiments/013-coder-durable-rc-inputs/README.md
+  checkpoint1: experiments/013-coder-durable-rc-inputs/checkpoint-1-provenance.yaml
+
+padeCoder:
+  repository: https://github.com/After-Certainty/pade-coder.git
+  commit: 3e9184087665b2bc6ebe7d261d1fbbd88cf94b60
+  module: modules/pade
+  defaultPadeVersion: v0.4.1
+  defaultBrokerCapabilities: []
+
+pade:
+  tag: v0.4.1
+  commit: 05fb036
+  binary: ~/.local/bin/pade
+  versionOutput: "pade version v0.4.1 (05fb036, built 2026-10-27T16:26:17Z)"
+
+broker:
+  endpoint: https://pade-broker-754719312452.us-central1.run.app
+  audience: https://pade-broker-754719312452.us-central1.run.app
+
+gce:
+  projectId: after-certainty
+  zone: us-central1-a
+  serviceAccountEmail: pade-coder-workspace@after-certainty.iam.gserviceaccount.com
+  identityAdapter: gce
+
+coder:
+  # Fresh workspace used for this checkpoint. Prior pade-gcp retained so the
+  # interactive session / repo push host was not destroyed mid-run.
+  workspaceName: pade-gcp-013
+  templateName: gcp-pade
+  templateVersionAtCapture: lucky_morgan36
+  createdFrom: copy-parameters-from pade-gcp
+  hostname: coder-ksteffe-pade-gcp-013-root
+  freshHome: true
+  priorWorkspaceRetained: pade-gcp
+
+moduleManagedBindings:
+  path: ~/.config/pade/coder-bindings.yaml
+  expandedPath: /home/ksteffe/.config/pade/coder-bindings.yaml
+  mode: "0600"
+  sha256: d055820dc8a34a7cfc756caca332a80498a7271531d3202c36263db61b65d4bb
+  contents:
+    version: "0.1"
+    capabilities: {}
+  verifiedEmptyCapabilities: true
+  verifiedMode0600: true
+
+rcDownstream:
+  path: ~/.config/pade/rc-downstream/
+  presentFiles:
+    - name: broker_binding.json
+      mode: "0600"
+      source: coder_script.rc_trusted_bindings from module.pade.broker_binding
+      provider: broker
+      identity: gce
+      endpointEqualsAudience: true
+  absentOperatorInputs:
+    - experiment-011-coder-rc-bindings
+    - profile.yaml
+    - validation-report.yaml
+    - policy.yaml
+    - allow-capabilities.txt
+  noPriorStagingSurvived: true
+
+trustedDownstreamScript:
+  syncWant: after-certainty-pade-install_script
+  result: STOP
+  syncCompleteOnFailure: false
+  missingCheck:
+    adapter: missing
+    profile: missing
+    report: missing
+    policy: missing
+    allow: missing
+  leftModuleBindingsAsEmptyMap: true
+
+ambientCredentials:
+  GITHUB_TOKEN: unset
+  GH_TOKEN: unset
+  GITHUB_PAT: unset
+  AWS_ACCESS_KEY_ID: unset
+  AWS_SECRET_ACCESS_KEY: unset
+  AWS_SESSION_TOKEN: unset
+  AWS_PROFILE: unset
+  gh_hosts_yml: absent
+  aws_credentials_file: absent
+  boto3: module-not-installed-on-fresh-home
+  note: No ambient GitHub or AWS provider credential files/env on the fresh home.
+
+checks:
+  padeVersionRecorded: true
+  padeCoderRevisionRecorded: true
+  brokerCapabilitiesEmpty: true
+  bindingsEmptyMapMode0600: true
+  noPriorRcDownstreamStaging: true
+  noAmbientProviderCredentials: true
+  noManualProfileEvidencePolicyAllowlistPlaced: true
+
+result: checkpoint-2-pass
+recordedUtc: 2026-11-07T04:03:40Z
+next: Checkpoint 3 — deliver trusted inputs automatically via template (do not manually stage)

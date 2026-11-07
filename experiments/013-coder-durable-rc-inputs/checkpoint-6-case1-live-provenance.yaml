@@ -1,0 +1,47 @@
+# Experiment 013 — Checkpoint 6 case 1 live lifecycle proof (durable source unavailable).
+# No JWTs, GitHub tokens, AWS secrets, account IDs, or numeric Google subjects.
+
+purpose: |
+  Demonstrate that when trusted adapter-source fetch fails during startup, the
+  real module-managed bindings file remains empty and sync does not complete.
+  Then restore the valid template and confirm normal regeneration.
+
+brokenTemplate:
+  name: gcp-pade
+  version: exp013_cp6_broken_fetch
+  activate: false
+  change: rc_pade_adapter_commit set to 0000000000000000000000000000000000000000
+  note: fixtures still embed/materialize; failure occurs at pinned archive fetch before adapter invoke
+
+workspace:
+  name: pade-gcp-013-cp6
+  hostname: coder-ksteffe-pade-gcp-013-cp6-root
+
+failureRun:
+  adapterSourceCommitAttempted: "0000000000000000000000000000000000000000"
+  fetchUrl: https://github.com/After-Certainty/rc-pade/archive/0000000000000000000000000000000000000000.tar.gz
+  curlExit: 22
+  httpStatus: 404
+  adapterInvoked: false
+  syncComplete: false
+  syncCompleteSkippedAfterFailure: true
+  moduleManagedBindings:
+    path: /home/ksteffe/.config/pade/coder-bindings.yaml
+    mode: "0600"
+    capabilities: {}
+    usableBindings: false
+
+restoreRun:
+  updatedToTemplateVersion: exp013_durable_inputs_v3
+  activeTemplateConfirmed: true
+  adapterSourceCommit: fd592a4c826fb6b8f005c11625122138c797ae63
+  adapterInvoked: true
+  syncComplete: true
+  moduleManagedBindings:
+    capabilityNames: [github.repo.read, github.repo.write]
+  result: pass
+
+workspaceDeletedAfterEvidence: true
+
+result: pass
+recordedUtc: 2026-11-07T04:45:50Z

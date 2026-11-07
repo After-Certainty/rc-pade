@@ -1,6 +1,6 @@
 # Experiment 013 — durable trusted Runtime Conditions inputs for fresh Coder workspaces
 
-**Status:** planned experiment / runbook only. No result is claimed until the steps below are executed and evidence is recorded.
+**Status:** Checkpoints 1–7 recorded; PR review hardening applied (template source snapshot, live CP6 durable-source failure on module bindings, explicit scope note). Core success met on `exp013_durable_inputs_v3`.
 
 ## Question
 
@@ -113,12 +113,14 @@ At minimum classify:
 
 | Input | Expected owner | Portable workload input? | Operator-controlled? | Durable source chosen |
 |---|---|---:|---:|---|
-| Runtime Conditions Profile | workload / trusted pipeline | yes | may be produced by trusted pipeline | TBD |
-| validation evidence | trusted validation pipeline | no | yes | TBD |
-| projection policy | platform operator | no | yes | TBD |
-| capability allowlist | platform operator | no | yes | TBD |
-| broker binding template | Coder / platform operator | no | yes | `module.pade.broker_binding` |
-| adapter | platform integration | no | yes | repository/module source |
+| Runtime Conditions Profile | workload / trusted pipeline | yes | may be produced by trusted pipeline | Coder template–pinned trusted bytes (011 B Case A) |
+| validation evidence | trusted validation pipeline | no | yes | Coder template–pinned projected report (011 B2) |
+| projection policy | platform operator | no | yes | Coder template (Terraform-controlled) |
+| capability allowlist | platform operator | no | yes | Coder template (Terraform-controlled) |
+| broker binding template | Coder / platform operator | no | yes | `module.pade.broker_binding` (already durable) |
+| adapter | platform integration | no | yes | pinned `rc-pade` commit fetch + pinned Go build (template archive ≤1MiB) |
+
+**Checkpoint 1 recorded:** [`checkpoint-1-provenance.yaml`](checkpoint-1-provenance.yaml). Chosen mechanism: extend existing `coder_script.rc_trusted_bindings` so remaining inputs are materialized from operator-controlled template content the same way `broker_binding` already is. Ownership split is clear — continue.
 
 The chosen mechanism must not require a human to SSH into the workspace and recreate files after every fresh home.
 
@@ -141,6 +143,8 @@ Before the trusted RC step runs, verify:
 
 Do not manually place Profile, evidence, policy, or allowlist files in the workspace.
 
+**Checkpoint 2 recorded:** [`checkpoint-2-provenance.yaml`](checkpoint-2-provenance.yaml) on fresh workspace `pade-gcp-013` / `lucky_morgan36`. Empty module-managed bindings (`capabilities: {}`, mode `0600`); only script-written `broker_binding.json` under `rc-downstream/`; adapter/profile/report/policy/allow absent; RC script STOP; no ambient GitHub/AWS provider credentials. Prior `pade-gcp` retained as the interactive push host.
+
 ## Checkpoint 3 — deliver trusted inputs automatically
 
 Use the chosen durable source to deliver or materialize the trusted inputs.
@@ -154,6 +158,8 @@ Requirements:
 - failure to retrieve any required trusted input must leave PADE bindings empty.
 
 Record source identifiers, revisions/digests, and resulting local paths without recording secret Material.
+
+**Checkpoint 3 recorded:** [`checkpoint-3-provenance.yaml`](checkpoint-3-provenance.yaml). Template `exp013_durable_inputs_v3` materializes Profile/report/policy/allowlist from embedded `rc-inputs/` (mode `0600`, digests match fixtures), builds the Experiment 011 adapter from pinned `rc-pade` @ `fd592a4` with pinned Go `1.26.10`, and keeps broker binding on `module.pade.broker_binding` only. No manual shell copy. Fixtures live under [`fixtures/`](fixtures/). Exact template source used for the proof is preserved under [`template-exp013_durable_inputs_v3/`](template-exp013_durable_inputs_v3/).
 
 ## Checkpoint 4 — run the unchanged Experiment 011 handoff
 
@@ -178,6 +184,8 @@ Verify the resulting module-managed file:
 - broker-only configuration;
 - no credential Material;
 - no stale capabilities.
+
+**Checkpoint 4 recorded:** [`checkpoint-4-provenance.yaml`](checkpoint-4-provenance.yaml). Real `module.pade.bindings_path` mode `0600`; capabilities `github.repo.read` + `github.repo.write` broker-only; `pade` validate/plan/capabilities OK; no credential material; no temp bindings path.
 
 ## Checkpoint 5 — live fulfillment
 
@@ -211,6 +219,8 @@ The purpose is to verify the automatically delivered trusted inputs reach the al
 
 Do not expand broker authorization just to produce a positive write result.
 
+**Checkpoint 5 recorded:** [`checkpoint-5-provenance.yaml`](checkpoint-5-provenance.yaml). `github.repo.read` → `repo_full_name=After-Certainty/after-certainty` (token in child only). `github.repo.write` → broker resolve denied (http 403); child did not run. Ambient provider credentials absent.
+
 ## Checkpoint 6 — failure cases
 
 From fresh or restarted workspaces, test at least:
@@ -229,6 +239,8 @@ From fresh or restarted workspaces, test at least:
    - expected: adapter rejects and bindings remain empty.
 
 Do not weaken validation or fail-closed behavior to make startup continue.
+
+**Checkpoint 6 recorded:** [`checkpoint-6-provenance.yaml`](checkpoint-6-provenance.yaml). All six cases left no usable bindings (empty `capabilities: {}`, mode `0600`). Case 1 has a live module-path proof ([`checkpoint-6-case1-live-provenance.yaml`](checkpoint-6-case1-live-provenance.yaml)): broken adapter-source pin → real `coder-bindings.yaml` stays empty, sync incomplete, then valid template restore regenerates. Cases 2–6 use the unchanged 011 adapter fail-closed contract.
 
 ## Checkpoint 7 — restart and recreate
 
@@ -262,6 +274,10 @@ Expected:
 - the same read/deny boundary still holds.
 
 This is the core success criterion for Experiment 013.
+
+**Checkpoint 7 recorded:** [`checkpoint-7-provenance.yaml`](checkpoint-7-provenance.yaml).
+- **Restart** (`pade-gcp-013`): pade-coder empty map → automatic rematerialization → adapter regenerated bindings (`4ce490e5…`).
+- **Fresh recreate** (`pade-gcp-013-fresh`): new disk; no manual staging; same digests/bindings; live read authorize + write deny (http 403).
 
 ## Evidence hygiene
 
@@ -297,6 +313,17 @@ It should establish:
 - that the existing downstream authorization boundary remains unchanged.
 
 It does **not** prove a signed cross-system validation handoff. That is intentionally reserved for Experiment 014.
+
+## Scope and remaining findings
+
+Experiment 013 proves that **template-pinned trusted bytes** (plus a pinned adapter source commit/Go toolchain) are a durable, operator-controlled source for this experiment and survive fresh-home recreation and restart.
+
+It does **not** yet prove a general workload publication / discovery / update mechanism in which arbitrary changing Profiles are delivered from a workload or trusted pipeline **without republishing the Coder template**. Treat Profile/evidence pins here as an experiment-grade durable source-of-truth, not as the final production distribution architecture.
+
+Related artifacts for audit:
+
+- template source snapshot: [`template-exp013_durable_inputs_v3/`](template-exp013_durable_inputs_v3/)
+- fixture digest check: [`verify-fixtures.sh`](verify-fixtures.sh) (`bash experiments/013-coder-durable-rc-inputs/verify-fixtures.sh`)
 
 ## Suggested Cursor workflow
 

@@ -1,0 +1,8 @@
+5425ed6841fe97a8429cafe8a125c3293d7c409a83bb17f3117a1ef18220fe2e  ./README.md
+f89b920cab3cc13cb7c52f75b7ed490faefcd24936ca7f014f747c2b74494e3b  ./SNAPSHOT.md
+29b49b8ff2da4881f4818864d7aefdafcc23635fad3be09323213350c3227f52  ./main.tf
+a37c6674dba9d4b522afcb45d566f913b055eec5b697b8129e8863470269a52a  ./rc-inputs/SOURCE.txt
+152d75d84cfffb6aa04e21658ae207a7dd4c092a0f2e4d2a762e784ba71b009c  ./rc-inputs/allow-capabilities.txt
+a5f8f138e2ed5ca2d559d8711d7de50fadb0288c5c02532f8316c239a23007a4  ./rc-inputs/policy.yaml
+53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19  ./rc-inputs/profile.yaml
+aceb19dc7cc6717aa962fa088192388731a88e60f262e3a6a2264fa00dedb20f  ./rc-inputs/validation-report.yaml

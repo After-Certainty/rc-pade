@@ -1,0 +1,59 @@
+# Experiment 013 — Checkpoint 4: unchanged Experiment 011 handoff on module-managed bindings.
+# No JWTs, GitHub tokens, AWS secrets, account IDs, or numeric Google subjects.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: docs/experiment-013-durable-rc-inputs
+  commitAtCapture: 8a84d5c
+  runbook: experiments/013-coder-durable-rc-inputs/README.md
+  prior: experiments/013-coder-durable-rc-inputs/checkpoint-3-provenance.yaml
+
+coder:
+  workspaceName: pade-gcp-013
+  templateName: gcp-pade
+  templateVersionAtCapture: exp013_durable_inputs_v3
+  hostname: coder-ksteffe-pade-gcp-013-root
+
+pade:
+  tag: v0.4.1
+  commit: 05fb036
+  versionOutput: "pade version v0.4.1 (05fb036, built 2026-10-27T16:26:17Z)"
+
+moduleOutputsUsed:
+  broker_binding: true
+  bindings_path: ~/.config/pade/coder-bindings.yaml
+  scripts: after-certainty-pade-install_script
+  temporaryBindingsPathForPrimaryProof: false
+
+handoff:
+  adapter: experiments/011-coder-rc-bindings (unchanged; built at startup from pinned commit)
+  invokedBy: coder_script.rc_trusted_bindings after durable delivery
+  adapterStdout: "experiment-011: wrote 2 broker-only capability bindings"
+  developmentSession:
+    path: ~/.config/pade/rc-downstream/development-session.yaml
+    name: web-demo-dev-container
+    capabilities: [github.repo.read, github.repo.write]
+
+moduleManagedBindings:
+  expandedPath: /home/ksteffe/.config/pade/coder-bindings.yaml
+  mode: "0600"
+  sha256: 4ce490e592a76c8a551951935a908c854d25f6a5b307faf57f123c829ee95743
+  version: "0.1"
+  capabilityNames: [github.repo.read, github.repo.write]
+  onlyApprovedProjectedCapabilities: true
+  allBrokerBound: true
+  identity: gce
+  noCredentialMaterial: true
+  noStaleCapabilities: true
+  credentialNeedleScan: clean
+
+padeConsumerChecks:
+  bindingsFlag: --bindings /home/ksteffe/.config/pade/coder-bindings.yaml
+  manifest: adapter-produced DevelopmentSession (web-demo-dev-container)
+  capabilities: both bound provider=broker
+  validate: ok
+  plan: ok
+
+result: checkpoint-4-pass
+recordedUtc: 2026-11-07T04:22:00Z
+next: Checkpoint 5 — live github.repo.read authorize + github.repo.write deny

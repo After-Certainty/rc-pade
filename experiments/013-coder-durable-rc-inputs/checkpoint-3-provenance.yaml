@@ -1,0 +1,119 @@
+# Experiment 013 — Checkpoint 3: automatic durable delivery of trusted inputs.
+# No JWTs, GitHub tokens, AWS secrets, account IDs, or numeric Google subjects.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: docs/experiment-013-durable-rc-inputs
+  commitAtCapture: fd592a4c826fb6b8f005c11625122138c797ae63
+  runbook: experiments/013-coder-durable-rc-inputs/README.md
+  fixtures: experiments/013-coder-durable-rc-inputs/fixtures/
+
+padeCoder:
+  repository: https://github.com/After-Certainty/pade-coder.git
+  commit: 3e9184087665b2bc6ebe7d261d1fbbd88cf94b60
+  module: modules/pade
+
+pade:
+  tag: v0.4.1
+  commit: 05fb036
+  versionOutput: "pade version v0.4.1 (05fb036, built 2026-10-27T16:26:17Z)"
+
+coder:
+  workspaceName: pade-gcp-013
+  templateName: gcp-pade
+  templateVersionAtCapture: exp013_durable_inputs_v3
+  priorFailedVersion: exp013_durable_inputs_v2
+  priorFailure: |
+    v2 STOPPED because mktemp dir name rc-pade-src.XXXXXX matched
+    find -name 'rc-pade-*', so SRC_DIR pointed at the temp parent rather than
+    the extracted archive. Fixed in v3 with src.XXXXXX + mindepth 1.
+  deliveryMechanism: coder_script.rc_trusted_bindings via Coder/Terraform template
+  manualShellCopy: false
+
+chosenMechanismNotes:
+  templateArchiveLimitBytes: 1048576
+  adapterNotEmbedded: true
+  adapterObtain: |
+    Template embeds small fixtures only. At startup the script fetches a pinned
+    Go toolchain (sha256-verified) and the public rc-pade GitHub archive at a
+    pinned commit, then builds experiments/011-coder-rc-bindings.
+  brokerStillFromModuleOutputOnly: true
+  templateSourceSnapshot: experiments/013-coder-durable-rc-inputs/template-exp013_durable_inputs_v3/
+  templateSourceSnapshotNote: |
+    Sanitized pull of gcp-pade @ exp013_durable_inputs_v3 preserved for audit
+    (added in PR review hardening; matches the live proof template version).
+
+pins:
+  rcPadeAdapterCommit: fd592a4c826fb6b8f005c11625122138c797ae63
+  go:
+    version: go1.26.10
+    tarball: go1.26.10.linux-amd64.tar.gz
+    sha256: ccfe7ae822d2c2f41f4fe7c956199967a4dac22d0ee0d2b2bfdb440aab3b20c5
+  profile:
+    templatePath: rc-inputs/profile.yaml
+    localPath: ~/.config/pade/rc-downstream/profile.yaml
+    mode: "0600"
+    sha256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+    bytes: 1682
+  validationReport:
+    templatePath: rc-inputs/validation-report.yaml
+    localPath: ~/.config/pade/rc-downstream/validation-report.yaml
+    mode: "0600"
+    sha256: aceb19dc7cc6717aa962fa088192388731a88e60f262e3a6a2264fa00dedb20f
+    bytes: 442
+  policy:
+    templatePath: rc-inputs/policy.yaml
+    sourceInRepo: experiments/008-rc-field-projection/policy.yaml
+    localPath: ~/.config/pade/rc-downstream/policy.yaml
+    mode: "0600"
+    sha256: a5f8f138e2ed5ca2d559d8711d7de50fadb0288c5c02532f8316c239a23007a4
+  allowlist:
+    templatePath: rc-inputs/allow-capabilities.txt
+    localPath: ~/.config/pade/rc-downstream/allow-capabilities.txt
+    mode: "0600"
+    value: github.repo.read,github.repo.write
+    sha256: 152d75d84cfffb6aa04e21658ae207a7dd4c092a0f2e4d2a762e784ba71b009c
+  brokerBinding:
+    source: module.pade.broker_binding
+    localPath: ~/.config/pade/rc-downstream/broker_binding.json
+    mode: "0600"
+    sha256: 9a3141de536be53cb472023eeb63c2575af37d6afff679c095202519837699ca
+    provider: broker
+    identity: gce
+    endpointEqualsAudience: true
+    duplicatedOutsideModule: false
+  adapter:
+    localPath: ~/.config/pade/rc-downstream/experiment-011-coder-rc-bindings
+    mode: "0700"
+    sha256: cc7d9e2a7f62b0152803986264449883fae94f7c388742cf30a4ea5785800b91
+    builtFromPinnedCommit: true
+  sourceManifest:
+    localPath: ~/.config/pade/rc-downstream/SOURCE.txt
+    mode: "0600"
+    sha256: a37c6674dba9d4b522afcb45d566f913b055eec5b697b8129e8863470269a52a
+
+ownershipBoundaryChecks:
+  workloadRepoTipCannotRewritePolicyOrAllowlist: true
+  note: |
+    Policy and allowlist bytes are embedded in the Coder template at push time.
+    Workspace git content is not consulted for those inputs.
+
+deliveryResult:
+  allRequiredInputsPresent: true
+  restrictivePermissions: true
+  scriptCompleted: true
+  # The existing coder_script also invokes the Experiment 011 adapter after
+  # delivery. That handoff is recorded here as an observed side effect; live
+  # fulfillment remains Checkpoint 4/5.
+  adapterInvokedAfterDelivery: true
+  adapterStdout: "experiment-011: wrote 2 broker-only capability bindings"
+  moduleManagedBindingsAfterDelivery:
+    path: /home/ksteffe/.config/pade/coder-bindings.yaml
+    mode: "0600"
+    sha256: 4ce490e592a76c8a551951935a908c854d25f6a5b307faf57f123c829ee95743
+    capabilityNames: [github.repo.read, github.repo.write]
+    allBrokerBound: true
+
+result: checkpoint-3-pass
+recordedUtc: 2026-11-07T04:16:30Z
+next: Checkpoint 4 — verify unchanged Experiment 011 handoff against real module bindings (already observed on this run; record fulfillment evidence next)

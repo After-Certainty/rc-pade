@@ -1,0 +1,78 @@
+# Experiment 013 — Checkpoint 5: live fulfillment through automatically delivered inputs.
+# No JWTs, GitHub tokens, AWS secrets, account IDs, or numeric Google subjects.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: docs/experiment-013-durable-rc-inputs
+  commitAtCapture: 8a84d5cf54b8bb7bf194bbb5ff71c48d84ffc26f
+  runbook: experiments/013-coder-durable-rc-inputs/README.md
+  prior:
+    - experiments/013-coder-durable-rc-inputs/checkpoint-3-provenance.yaml
+    - experiments/013-coder-durable-rc-inputs/checkpoint-4-provenance.yaml
+  freshValidationPath: Experiment 011 Checkpoint B Case A (template-pinned Profile + projected report)
+
+coder:
+  workspaceName: pade-gcp-013
+  templateName: gcp-pade
+  templateVersionAtCapture: exp013_durable_inputs_v3
+  hostname: coder-ksteffe-pade-gcp-013-root
+
+pade:
+  tag: v0.4.1
+  commit: 05fb036
+  binary: ~/.local/bin/pade
+
+broker:
+  endpoint: https://pade-broker-754719312452.us-central1.run.app
+  audience: https://pade-broker-754719312452.us-central1.run.app
+  identity: gce
+
+bindings:
+  path: /home/ksteffe/.config/pade/coder-bindings.yaml
+  mode: "0600"
+  usedModuleManagedPathOnly: true
+  noTmpBindingsOverride: true
+
+ambientCredentialsBeforeExec:
+  GITHUB_TOKEN: unset
+  GH_TOKEN: unset
+  AWS_ACCESS_KEY_ID: unset
+  AWS_SECRET_ACCESS_KEY: unset
+  AWS_SESSION_TOKEN: unset
+  gh_hosts_yml: absent
+  aws_credentials_file: absent
+
+github:
+  github.repo.read:
+    result: authorized
+    probe: After-Certainty/after-certainty
+    childObservation: "repo_full_name=After-Certainty/after-certainty"
+    tokenPresentInChildOnly: true
+    tokenValueRecorded: false
+    padeExecExit: 0
+  github.repo.write:
+    result: broker-denied
+    padeExec: "broker resolve denied (http 403)"
+    childDidNotRun: true
+    padeExecExit: 1
+
+parentAfterExec:
+  GITHUB_TOKEN: unset
+
+authorizationBoundary:
+  unchangedFromExperiment011: true
+  note: |
+    Automatically delivered trusted inputs reach the same broker authorize/deny
+    boundary already proven in Experiment 011 Checkpoint B. Broker authorization
+    was not expanded to force a write success.
+
+safety:
+  durableProviderCredentialsInWorkspace: false
+  durableCredentialsInBindingsFile: false
+  rawGoogleTokenRecorded: false
+  numericGoogleSubjectRecorded: false
+  githubTokenRecorded: false
+
+result: checkpoint-5-pass
+recordedUtc: 2026-11-07T04:22:31Z
+next: Checkpoint 6 — failure cases

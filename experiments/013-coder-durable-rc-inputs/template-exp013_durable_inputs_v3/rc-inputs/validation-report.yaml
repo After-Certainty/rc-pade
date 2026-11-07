@@ -1,0 +1,20 @@
+accepted: true
+validator:
+  module: github.com/runtimeconditions/rc-extension-resolver
+  version: v0.0.0-20260929185940-91c46bf6bcc8
+profile:
+  sha256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+  bytes: 1682
+conditions:
+- index: 0
+  kind: api
+  interfaceType: http
+  valid: true
+- index: 1
+  kind: google.analytics
+  interfaceType: web
+  valid: true
+- index: 2
+  kind: source_control
+  interfaceType: git
+  valid: true

@@ -1,0 +1,100 @@
+# Experiment 013 — Checkpoint 6: failure cases (fail-closed).
+# No JWTs, GitHub tokens, AWS secrets, account IDs, or numeric Google subjects.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: docs/experiment-013-durable-rc-inputs
+  commitAtCapture: 3c0a188
+  runbook: experiments/013-coder-durable-rc-inputs/README.md
+
+coder:
+  workspaceName: pade-gcp-013
+  templateName: gcp-pade
+  templateVersionAtCapture: exp013_durable_inputs_v3
+  hostname: coder-ksteffe-pade-gcp-013-root
+  workDir: ~/.coder-modules/after-certainty/rc-trusted-bindings/cp6
+
+method:
+  note: |
+    Adapter reject cases use isolated --output paths so revoke-first fail-closed
+    behavior can be observed without destroying the live module-managed happy
+    path mid-suite. Module bindings were restored from the same durable inputs
+    after the suite. Script-level missing-input STOP was already proven on a
+    fresh home in Checkpoint 2.
+
+cases:
+  1_durableSourceUnavailable:
+    how: |
+      Live startup on non-active template version exp013_cp6_broken_fetch
+      (rc_pade_adapter_commit all zeros). Fixtures materialize; pinned archive
+      fetch returns HTTP 404; adapter is not invoked; sync does not complete;
+      real module-managed bindings remain capabilities: {} mode 0600. Workspace
+      then updated to active exp013_durable_inputs_v3 and regenerated successfully.
+      Detail: checkpoint-6-case1-live-provenance.yaml
+    priorSyntheticNote: |
+      An earlier isolated curl-only check existed; superseded by this live
+      module-path lifecycle proof.
+    curlExit: 22
+    httpStatus: 404
+    adapterInvoked: false
+    syncComplete: false
+    moduleManagedBindingsPath: ~/.config/pade/coder-bindings.yaml
+    usableBindings: false
+    emptyCapabilities: true
+    mode0600: true
+    restoredValidTemplateAndRegenerated: true
+    result: pass
+
+  2_missingProjectionPolicy:
+    how: adapter invoked with nonexistent --policy path; output seeded with stale capability
+    adapterExit: 1
+    errorMentionsPolicy: true
+    bindingsPath: cp6/case2-bindings.yaml
+    usableBindings: false
+    emptyCapabilitiesAfter: true
+    staleCapabilityCleared: true
+    result: pass
+    relatedScriptLevelProof: Checkpoint 2 STOP when policy missing on fresh home
+
+  3_missingAllowlist:
+    how: adapter invoked with empty --allow-capabilities
+    adapterExit: 1
+    bindingsPath: cp6/case3-bindings.yaml
+    usableBindings: false
+    emptyCapabilitiesAfter: true
+    staleCapabilityCleared: true
+    result: pass
+
+  4_tamperedProfileAfterValidation:
+    how: single-byte Profile mutation; validation-report hash unchanged
+    profileShaBefore: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+    profileShaAfter: e1482bc5f5146e6ba3f47ed1101e92534ee9209fabdfcd2478acc96e674dc635
+    adapterExit: 1
+    adapterMessage: "missing, rejected, incomplete, or mismatched validation evidence"
+    emptyCapabilitiesAfter: true
+    result: pass
+
+  5_tamperedValidationEvidence:
+    how: flip one hex nibble in validation-report profile.sha256
+    adapterExit: 1
+    adapterMessage: "missing, rejected, incomplete, or mismatched validation evidence"
+    emptyCapabilitiesAfter: true
+    result: pass
+
+  6_policyDoesNotApproveProjectedCapability:
+    how: ProjectionPolicy with rules: []
+    adapterExit: 1
+    adapterMessage: "unsupported Runtime Conditions demand: no projection rule matches api/http"
+    emptyCapabilitiesAfter: true
+    result: pass
+
+postSuite:
+  moduleManagedBindingsRestored: true
+  path: /home/ksteffe/.config/pade/coder-bindings.yaml
+  mode: "0600"
+  capabilityNames: [github.repo.read, github.repo.write]
+  validationOrFailClosedWeakened: false
+
+result: checkpoint-6-pass
+recordedUtc: 2026-11-07T04:24:30Z
+next: Checkpoint 7 — restart with persistent trusted source + full recreate/fresh home
