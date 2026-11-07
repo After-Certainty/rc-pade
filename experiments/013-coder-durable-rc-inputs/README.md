@@ -1,6 +1,6 @@
 # Experiment 013 — durable trusted Runtime Conditions inputs for fresh Coder workspaces
 
-**Status:** Checkpoint 1 recorded (ownership + durable source). Delivery and live proof not yet executed. No overall result is claimed until later checkpoints complete.
+**Status:** Checkpoints 1–2 recorded. Fresh workspace baseline proven on `pade-gcp-013` (empty bindings; operator inputs absent; RC script STOP). Delivery and live proof not yet executed.
 
 ## Question
 
@@ -142,6 +142,8 @@ Before the trusted RC step runs, verify:
 - no ambient GitHub or AWS provider credentials are present.
 
 Do not manually place Profile, evidence, policy, or allowlist files in the workspace.
+
+**Checkpoint 2 recorded:** [`checkpoint-2-provenance.yaml`](checkpoint-2-provenance.yaml) on fresh workspace `pade-gcp-013` / `lucky_morgan36`. Empty module-managed bindings (`capabilities: {}`, mode `0600`); only script-written `broker_binding.json` under `rc-downstream/`; adapter/profile/report/policy/allow absent; RC script STOP; no ambient GitHub/AWS provider credentials. Prior `pade-gcp` retained as the interactive push host.
 
 ## Checkpoint 3 — deliver trusted inputs automatically
 
