@@ -1,6 +1,6 @@
 # Experiment 013 — durable trusted Runtime Conditions inputs for fresh Coder workspaces
 
-**Status:** Checkpoints 1–5 recorded on `pade-gcp-013` / `exp013_durable_inputs_v3`. Durable delivery → module-managed 011 handoff → live `github.repo.read` authorize / `github.repo.write` deny. Failure cases and recreate remain.
+**Status:** Checkpoints 1–6 recorded on `pade-gcp-013` / `exp013_durable_inputs_v3`. Delivery, handoff, live read/deny, and fail-closed failure cases proven. Restart/recreate remains.
 
 ## Question
 
@@ -239,6 +239,8 @@ From fresh or restarted workspaces, test at least:
    - expected: adapter rejects and bindings remain empty.
 
 Do not weaken validation or fail-closed behavior to make startup continue.
+
+**Checkpoint 6 recorded:** [`checkpoint-6-provenance.yaml`](checkpoint-6-provenance.yaml). All six cases left no usable bindings (empty `capabilities: {}`, mode `0600`). Tamper/mismatch and empty-policy rejects used the unchanged 011 adapter; durable-fetch failure did not invoke the adapter. Module-managed happy-path bindings restored afterward.
 
 ## Checkpoint 7 — restart and recreate
 
