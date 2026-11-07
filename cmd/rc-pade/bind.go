@@ -65,15 +65,14 @@ func runBind(c bindOptions) error {
 	if c.output == "" || !filepath.IsAbs(c.output) {
 		return errors.New("--output must be an absolute path")
 	}
-	if c.session != "" && !filepath.IsAbs(c.session) {
-		return errors.New("--session-out must be an absolute path when provided")
-	}
-
 	// Revoke previous local capabilities before reading any caller-supplied
 	// inputs. A failed trust handoff, projection, policy, or binding step must
 	// never leave stale authority configured locally.
 	if err := writeAtomic(c.output, []byte("version: \"0.1\"\ncapabilities: {}\n"), 0600); err != nil {
 		return fmt.Errorf("revoke previous local bindings: %w", err)
+	}
+	if c.session != "" && !filepath.IsAbs(c.session) {
+		return errors.New("--session-out must be an absolute path when provided")
 	}
 
 	if c.verifiedProfile == "" || c.policy == "" || c.broker == "" || c.allowed == "" {
