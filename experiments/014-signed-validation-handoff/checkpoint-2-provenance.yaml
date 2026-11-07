@@ -1,0 +1,120 @@
+# Experiment 014 — Checkpoint 2: producer-side signed handoff for Case A.
+# Public evidence only. Never records private signing keys, JWTs, GitHub tokens,
+# AWS secrets, account IDs, or numeric Google subjects.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: docs/experiment-014-signed-validation-handoff
+  commitAtCapture: aa6f6b3d1a364147ef3f6fd3d28f20e78cfb4cd6
+  runbook: experiments/014-signed-validation-handoff/README.md
+  priorCheckpoint: experiments/014-signed-validation-handoff/checkpoint-1-provenance.yaml
+
+producer:
+  implementation: runtimeconditions/rc-demos validated-profile-handoff
+  repository: https://github.com/runtimeconditions/rc-demos.git
+  upstreamPR: https://github.com/runtimeconditions/rc-demos/pull/5
+  commit: 853eab3c2c04f9d1059b2dbd64ea91996828a3a9
+  package: validated-profile-handoff/
+  commands:
+    validate: validated-profile-handoff/cmd/validate
+    keygen: validated-profile-handoff/cmd/keygen
+  format: rc-demos-handoff-experiment-1
+  signatureAlgorithm: Ed25519 detached over exact evidence.json bytes
+  validator:
+    module: github.com/runtimeconditions/go-rc-profiler/extensioncheck
+    goRcProfilerCommit: 5d2e860e48842b89ec83414123a7e59228f61d36
+    completedCalls: [ResolveExtensionClosure, ValidateProfileYAML]
+  producerExecutableSHA256: 6a2e02212fcc44a5b6f4bfebe894f4fc08836725b6639838f126f8638a06ce46
+  note: |
+    producer_sha256 is the digest of the validate binary that signed this
+    bundle. It is inspectable identity, not remote attestation.
+
+extensionsCatalog:
+  repository: https://github.com/runtimeconditions/extensions.git
+  commit: 1f24b8815812f8a883cf7ceb87b6a9810d47e106
+  path: catalog/
+  adaptation:
+    reason: |
+      Stock catalog declares kind rc.source_control. Case A Profile uses
+      kind: source_control. go-rc-profiler/extensioncheck requires exactly one
+      kind definition and rejects the stock catalog for conditions[2].
+      rc-extension-resolver (Experiment 009) previously accepted this Profile
+      via its own kind-matching behavior; that divergence is already noted in
+      Experiment 009.
+    change: |
+      Private producer-only catalog copy: replace rc.source_control with
+      source_control throughout
+      catalog/rc/source-control/releases/0.1.0/runtimeconditions.extension.yaml.
+      Profile bytes were not modified. Other extension definitions unchanged.
+    resultingSourceControlDefinitionSHA256: e6ab6b30b00cee3d345174a4aede0504f72013e5639b1aa23fc5e683995f704f
+
+profile:
+  source: experiments/013-coder-durable-rc-inputs/fixtures/profile.yaml
+  identity: Experiment 009/011/013 Case A composed rc-demos Profile
+  bytes: 1682
+  sha256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+  unchangedFromPriorExperiments: true
+  includesSourceControlGit: true
+
+recordedBundle:
+  path: experiments/014-signed-validation-handoff/producer-bundle/
+  files:
+    - profile.yaml
+    - evidence.json
+    - evidence.sig
+    - trusted.pub
+    - extensions/*.yaml
+  privateKeyRecorded: false
+  verification:
+    method: handoff.Verify(bundle, trusted.pub)
+    result: VERIFY_OK
+    returnedProfileSHA256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+
+evidence:
+  path: experiments/014-signed-validation-handoff/producer-bundle/evidence.json
+  experiment: rc-demos-handoff-experiment-1
+  profile_sha256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+  validator: github.com/runtimeconditions/go-rc-profiler/extensioncheck
+  producer_sha256: 6a2e02212fcc44a5b6f4bfebe894f4fc08836725b6639838f126f8638a06ce46
+  completed_calls: [ResolveExtensionClosure, ValidateProfileYAML]
+  resolved_extensions:
+    - id: https://runtimeconditions.io/extensions/common-integrations/v1alpha1/runtimeconditions.extension.yaml
+      sha256: 6f74ec92447e1997fadac6862f6dfc886bc42ea8ec73d1c4e2979d48d49bd157
+      bytes: 6690
+    - id: https://runtimeconditions.io/extensions/env-configuration/v1alpha1/runtimeconditions.extension.yaml
+      sha256: 36d3fb00f63f88f003e499153258522d6f8ea63677fb409a2cf3ffd5beb787dc
+      bytes: 9710
+    - id: https://runtimeconditions.io/extensions/google-analytics/0.1.0/runtimeconditions.extension.yaml
+      sha256: db303fb46325eea8db4196ed83ad8ea6d91f5d49af3e226fea7cfaf1f8b5248d
+      bytes: 2729
+    - id: https://runtimeconditions.io/extensions/source-control/0.1.0/runtimeconditions.extension.yaml
+      sha256: e6ab6b30b00cee3d345174a4aede0504f72013e5639b1aa23fc5e683995f704f
+      bytes: 1914
+      note: definition bytes include the producer-only kind adaptation above
+
+trustMaterial:
+  publicKeyPath: experiments/014-signed-validation-handoff/producer-bundle/trusted.pub
+  algorithm: Ed25519
+  publicKeyBytes: 32
+  publicKeySHA256: 2cf313dcc7b0733cdc164e8066dc8aff7134226ba64ed25f63bc48229b7749b6
+  publicKeyHex: ba60aecd80c86e42cea6188e01adf20ea959db331b7bfe105fe44a2bc493f556
+  privateKeyRecorded: false
+  note: |
+    Experiment-local trust ceremony. trusted.pub is recorded as the verifier
+    key for this bundle. Do not establish production trust by accepting a
+    public key from the same untrusted download as its evidence.
+
+naiveAttemptWithoutCatalogAdaptation:
+  catalog: runtimeconditions/extensions@1f24b88 stock catalog/
+  result: upstream_validation_failed
+  detail: |
+    conditions[2].kind source_control: expected exactly one definition, got 0
+    conditions[2].interface.type source_control/git: expected exactly one definition, got 0
+
+checkpoint2Result: |
+  Produced and verified a signed rc-demos validated-profile-handoff bundle for
+  the exact Case A Profile used by Experiments 009/011/013. Public artifacts
+  are recorded under producer-bundle/. Private signing key was not recorded.
+  Proceed to Checkpoint 3 (durable delivery into fresh Coder) only after
+  agreeing the delivery packaging for Profile + signed evidence + public trust
+  alongside existing operator policy/allowlist inputs.

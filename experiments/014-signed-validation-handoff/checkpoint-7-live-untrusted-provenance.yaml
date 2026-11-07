@@ -1,0 +1,66 @@
+# Experiment 014 — live startup fail-closed proof (untrusted handoff on real bindings).
+# Public evidence only. Never records private signing keys, JWTs, GitHub tokens,
+# AWS secrets, account IDs, or numeric Google subjects.
+
+purpose: |
+  Demonstrate that when signed-handoff verification fails during the real Coder
+  startup lifecycle, the module-managed bindings file remains empty and sync
+  does not complete. Then restore the valid template and confirm normal
+  regeneration. Complements Checkpoint 7's isolated-copy adversarial suite.
+
+brokenTemplate:
+  name: gcp-pade
+  version: exp014_live_untrusted_sig
+  activate: false
+  change: xor first byte of rc-inputs/handoff/evidence.sig (still 64 bytes)
+  evidenceSigSha256After: d2110ab424c8f11dd5e331c8cd62d9b321177332796c3f22996f495466ceaf46
+  evidenceSigSha256Valid: da37c1cae3ab4c71c3d323ca402dfaca1701edb62266869344b5d78e5af0fee7
+  note: |
+    Pushed from a temporary working copy of the retained template tree with only
+    evidence.sig corrupted. Active template remained exp014_signed_handoff_v4.
+
+workspace:
+  name: pade-gcp-014-live-untrusted
+  hostname: coder-ksteffe-pade-gcp-014-live-untrusted-root
+
+failureRun:
+  templateVersion: exp014_live_untrusted_sig
+  bindingsBeforeVerifySha256: d055820dc8a34a7cfc756caca332a80498a7271531d3202c36263db61b65d4bb
+  verifierCategory: evidence_untrusted
+  verifierDetail: "signature does not match configured trusted public key"
+  verifyRc: 1
+  failClosedReason: untrusted_handoff
+  adapterInvoked: false
+  verifiedProfileWritten: false
+  handoffOk: false
+  verifyOk: false
+  syncComplete: false
+  syncCompleteSkippedAfterFailure: true
+  moduleManagedBindings:
+    path: /home/ksteffe/.config/pade/coder-bindings.yaml
+    mode: "0600"
+    capabilities: {}
+    sha256: 4d85599c791c64fc84bd9b89b9e975105f284c5bddad5ded01c84518ae1e4b9a
+    usableBindings: false
+
+restoreRun:
+  updatedToTemplateVersion: exp014_signed_handoff_v4
+  activeTemplateConfirmed: true
+  method: coder update (workspace out of date vs active version)
+  handoffVerified: true
+  adapterInvoked: true
+  syncComplete: true
+  handoffOk: true
+  verifyOk: true
+  moduleManagedBindings:
+    mode: "0600"
+    sha256: 4ce490e592a76c8a551951935a908c854d25f6a5b307faf57f123c829ee95743
+    capabilityNames: [github.repo.read, github.repo.write]
+  evidenceSigSha256: da37c1cae3ab4c71c3d323ca402dfaca1701edb62266869344b5d78e5af0fee7
+  verifiedProfileSha256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+  result: pass
+
+workspaceDeletedAfterEvidence: true
+
+result: pass
+recordedUtc: 2026-11-07T05:57:00Z

@@ -1,0 +1,125 @@
+# Experiment 014 — Checkpoint 8: restart / fresh-home proof.
+# Public evidence only. Never records private signing keys, JWTs, GitHub tokens,
+# AWS secrets, account IDs, or numeric Google subjects.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: docs/experiment-014-signed-validation-handoff
+  commitAtCapture: aa6f6b3d1a364147ef3f6fd3d28f20e78cfb4cd6
+  runbook: experiments/014-signed-validation-handoff/README.md
+  prior:
+    - experiments/014-signed-validation-handoff/checkpoint-5-provenance.yaml
+    - experiments/014-signed-validation-handoff/checkpoint-6-provenance.yaml
+    - experiments/014-signed-validation-handoff/checkpoint-7-provenance.yaml
+
+coder:
+  templateName: gcp-pade
+  templateVersionAtCapture: exp014_signed_handoff_v4
+  deliveryMechanism: experiment-013-durable-coder-script-embed
+  manualStaging: false
+
+pade:
+  tag: v0.4.1
+  commit: 05fb036
+  binary: ~/.local/bin/pade
+  versionOutput: "pade version v0.4.1 (05fb036, built 2026-10-27T16:26:17Z)"
+
+broker:
+  endpoint: https://pade-broker-754719312452.us-central1.run.app
+  audience: https://pade-broker-754719312452.us-central1.run.app
+  identity: gce
+
+emptyBindingsBeforeVerify:
+  path: ~/.config/pade/coder-bindings.yaml
+  mode: "0600"
+  sha256: d055820dc8a34a7cfc756caca332a80498a7271531d3202c36263db61b65d4bb
+  note: pade-coder initial placeholder before signed-handoff verify + 011 adapter
+
+bindingsAfterAdapter:
+  path: ~/.config/pade/coder-bindings.yaml
+  mode: "0600"
+  sha256: 4ce490e592a76c8a551951935a908c854d25f6a5b307faf57f123c829ee95743
+  capabilityNames: [github.repo.read, github.repo.write]
+  allBrokerBound: true
+  noCredentialMaterial: true
+  matchesCheckpoint5And6: true
+
+verifiedProfile:
+  path: ~/.config/pade/rc-downstream/verified-profile.yaml
+  sha256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+  bytes: 1682
+
+sessionManifest:
+  path: ~/.config/pade/rc-downstream/development-session.yaml
+  sha256: b8fc0cf435e7ed8f0c087c4091b26a2080d4837c39bec9063a7e88f2a1ff0c50
+
+proofARestartExistingHome:
+  workspaceName: pade-gcp-014
+  hostname: coder-ksteffe-pade-gcp-014-root
+  action: coder restart pade-gcp-014
+  handoffOk: true
+  verifyOk: true
+  handoffVerified: true
+  bindingsBeforeSha256: d055820dc8a34a7cfc756caca332a80498a7271531d3202c36263db61b65d4bb
+  bindingsAfterSha256: 4ce490e592a76c8a551951935a908c854d25f6a5b307faf57f123c829ee95743
+  privateSigningKeyInWorkspace: false
+
+proofBFreshHome:
+  workspaceName: pade-gcp-014-fresh
+  hostname: coder-ksteffe-pade-gcp-014-fresh-root
+  createdFrom: exp014_signed_handoff_v4
+  copyParametersFrom: pade-gcp-014
+  handoffOkFlag: ~/.coder-modules/after-certainty/rc-trusted-bindings/logs/handoff.ok
+  verifyOkFlag: ~/.coder-modules/after-certainty/rc-trusted-bindings/logs/verify.ok
+  handoffOk: true
+  verifyOk: true
+  handoffVerified: true
+  bindingsBeforeSha256: d055820dc8a34a7cfc756caca332a80498a7271531d3202c36263db61b65d4bb
+  bindingsAfterSha256: 4ce490e592a76c8a551951935a908c854d25f6a5b307faf57f123c829ee95743
+  privateSigningKeyInWorkspace: false
+  padeValidatePlanCapabilities: ok
+  ambientCredentialsBeforeExec:
+    GITHUB_TOKEN: unset
+    GH_TOKEN: unset
+    AWS_ACCESS_KEY_ID: unset
+    AWS_SECRET_ACCESS_KEY: unset
+    AWS_SESSION_TOKEN: unset
+    gh_hosts_yml: absent
+  github:
+    github.repo.read:
+      result: authorized
+      probe: After-Certainty/after-certainty
+      childObservation: "repo_full_name=After-Certainty/after-certainty"
+      tokenPresentInChildOnly: true
+      tokenValueRecorded: false
+      padeExecExit: 0
+    github.repo.write:
+      result: broker-denied
+      padeExec: "broker resolve denied (http 403)"
+      childDidNotRun: true
+      padeExecExit: 1
+  parentAfterExec:
+    GITHUB_TOKEN: unset
+    GH_TOKEN: unset
+
+pathProvenance:
+  trustRoot: signed rc-demos handoff verified before projection
+  noManualStaging: true
+  authorizationBoundaryUnchangedFrom011And013: true
+
+safety:
+  durableProviderCredentialsInWorkspace: false
+  durableCredentialsInBindingsFile: false
+  rawGoogleTokenRecorded: false
+  numericGoogleSubjectRecorded: false
+  githubTokenRecorded: false
+  privateSigningKeyRecorded: false
+
+result: checkpoint-8-pass
+recordedUtc: 2026-11-07T05:38:30Z
+
+checkpoint8Result: |
+  Restart proof A (pade-gcp-014) and fresh-home proof B (pade-gcp-014-fresh)
+  both replayed empty pade-coder bindings → automatic durable delivery →
+  handoff_verified → 011 adapter bindings 4ce490e5… with read authorize /
+  write deny. No private signing key in either workspace.

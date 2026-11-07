@@ -1,0 +1,68 @@
+# Experiment 014 — Checkpoint 5: project and bind verified demand.
+# Public evidence only. Never records private signing keys, JWTs, GitHub tokens,
+# AWS secrets, account IDs, or numeric Google subjects.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: docs/experiment-014-signed-validation-handoff
+  commitAtCapture: aa6f6b3d1a364147ef3f6fd3d28f20e78cfb4cd6
+  runbook: experiments/014-signed-validation-handoff/README.md
+
+scope:
+  mode: verify-then-unchanged-011-project-bind
+  liveFulfillment: deferred_to_checkpoint_6
+  adversarialCases: deferred_to_checkpoint_7
+
+coder:
+  templateName: gcp-pade
+  liveTemplateVersion: exp014_signed_handoff_v4
+  liveTemplateActive: true
+  workspaceName: pade-gcp-014
+  recordedUtc: 2026-11-07T05:19:30Z
+
+trustBridge:
+  handoffTrustRoot: rc-demos handoff.Verify over signed evidence + trusted.pub
+  adapterKnownFieldsReport:
+    path: ~/.config/pade/rc-downstream/validation-report.yaml
+    sha256: aceb19dc7cc6717aa962fa088192388731a88e60f262e3a6a2264fa00dedb20f
+    role: post-verify Experiment 011 KnownFields contract for same Profile digest
+    notHandoffTrustRoot: true
+    validatorModuleClaimedInReport: github.com/runtimeconditions/rc-extension-resolver
+  profileConsumedByAdapter: ~/.config/pade/rc-downstream/verified-profile.yaml
+  profileSHA256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+
+adapter:
+  sourceCommit: fd592a4c826fb6b8f005c11625122138c797ae63
+  path: experiments/011-coder-rc-bindings
+  obtain: fetch public rc-pade archive at pin; build with pinned Go 1.26.10
+  stdout: "experiment-011: wrote 2 broker-only capability bindings"
+  liveBinarySHA256: cc7d9e2a7f62b0152803986264449883fae94f7c388742cf30a4ea5785800b91
+  matchesExperiment013AdapterDigest: true
+
+liveSuccess:
+  handoffOkFlag: ~/.coder-modules/after-certainty/rc-trusted-bindings/logs/handoff.ok
+  verifyOkFlag: ~/.coder-modules/after-certainty/rc-trusted-bindings/logs/verify.ok
+  logLines:
+    - checkpoint=014-5-project-and-bind-verified-demand
+    - handoff_verified=true
+    - adapter_report_role=post_verify_011_knownfields_contract_not_handoff_trust_root
+    - invoking_adapter profile=.../verified-profile.yaml
+    - experiment-011: wrote 2 broker-only capability bindings
+    - bindings_after_adapter_mode=600
+    - complete
+  moduleManagedBindings:
+    path: ~/.config/pade/coder-bindings.yaml
+    mode: "0600"
+    sha256: 4ce490e592a76c8a551951935a908c854d25f6a5b307faf57f123c829ee95743
+    capabilityNames: [github.repo.read, github.repo.write]
+    allBrokerBound: true
+    noCredentialMaterial: true
+    matchesExperiment013DeliveryBindingsDigest: true
+
+result: checkpoint-5-pass-live
+
+checkpoint5Result: |
+  Live Checkpoint 5 complete. After signed-handoff verification, the unchanged
+  Experiment 011 adapter projected Case A into github.repo.read and
+  github.repo.write broker-only bindings at mode 0600. Live broker fulfillment
+  remains Checkpoint 6.
