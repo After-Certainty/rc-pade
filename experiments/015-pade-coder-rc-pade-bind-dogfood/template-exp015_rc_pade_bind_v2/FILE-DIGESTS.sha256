@@ -11,4 +11,4 @@ e6ab6b30b00cee3d345174a4aede0504f72013e5639b1aa23fc5e683995f704f  ./rc-inputs/ha
 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19  ./rc-inputs/handoff/profile.yaml
 a5f8f138e2ed5ca2d559d8711d7de50fadb0288c5c02532f8316c239a23007a4  ./rc-inputs/policy.yaml
 2cf313dcc7b0733cdc164e8066dc8aff7134226ba64ed25f63bc48229b7749b6  ./rc-inputs/trusted.pub
-2718de8c7d68356cd5ffd33d183af7f7d5223b87c7e0bbc7ea54e0a602c00930  ./rc-inputs/verify-handoff/main.go
+38d068007ccdc84cc0e0ae0f280b4d1c4591eaacb89c83223d855d5dc52518f4  ./rc-inputs/verify-handoff/main.go
