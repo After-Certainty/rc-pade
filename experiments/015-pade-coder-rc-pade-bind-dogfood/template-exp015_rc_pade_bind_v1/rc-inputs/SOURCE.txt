@@ -1,0 +1,30 @@
+Experiment 015 Checkpoint 2: verify signed handoff, install pinned rc-pade, bind via modules/rc-pade-bindings.
+Ownership:
+  RC producer/CI: rc-inputs/handoff/{profile.yaml,evidence.json,evidence.sig,extensions/*}
+  platform operator: trusted.pub, policy.yaml, allow-capabilities.txt
+  pade-coder: module.pade.broker_binding / bindings_path / scripts; modules/rc-pade-bindings
+Trust root: handoff.Verify (signed evidence). No validation-report.yaml in the active path.
+Verifier:
+  source: rc-inputs/verify-handoff/main.go
+  rc-demos commit: 853eab3c2c04f9d1059b2dbd64ea91996828a3a9
+  go-rc-profiler commit: 5d2e860e48842b89ec83414123a7e59228f61d36
+rc-pade bind:
+  commit: 43226ef96ae09419b6253a6eb364fd44a0ac1305
+  install path: ~/.local/bin/rc-pade
+  sync: after-certainty-rc-pade-install
+pade-coder bindings module:
+  ref: c40ba8c49c987f7b2ea9c1e42eb40fd6c36630a5
+  sync: after-certainty-rc-pade-bindings
+  prerequisites: after-certainty-rc-trusted-bindings, after-certainty-rc-pade-install
+go version: go1.26.10
+go archive: go1.26.10.linux-amd64.tar.gz
+go sha256: ccfe7ae822d2c2f41f4fe7c956199967a4dac22d0ee0d2b2bfdb440aab3b20c5
+profile sha256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+evidence.json sha256: cf2e3c99a1178eb2200529e4747dc731652c29e509e47ac0f0cb6bdd783b5898
+evidence.sig sha256: da37c1cae3ab4c71c3d323ca402dfaca1701edb62266869344b5d78e5af0fee7
+trusted.pub sha256: 2cf313dcc7b0733cdc164e8066dc8aff7134226ba64ed25f63bc48229b7749b6
+policy sha256: a5f8f138e2ed5ca2d559d8711d7de50fadb0288c5c02532f8316c239a23007a4
+allow-capabilities: github.repo.read,github.repo.write
+allow-capabilities sha256: 152d75d84cfffb6aa04e21658ae207a7dd4c092a0f2e4d2a762e784ba71b009c
+broker_binding: module.pade.broker_binding only (not embedded)
+bindings_path: module.pade.bindings_path

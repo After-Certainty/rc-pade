@@ -1,0 +1,51 @@
+# Experiment 015 — Checkpoint 7: synchronize consumer-side evidence.
+# Documentation / evidence reconciliation only. No new live Coder run.
+# Never records private signing keys, JWTs, GitHub tokens, AWS secrets,
+# account IDs, or numeric Google subjects.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: docs/experiment-015-pade-coder-rc-pade-bind-dogfood
+  commitAtCapture: 3a34a6bda97092c1cde15db44b77117fbcbcd638
+  runbook: experiments/015-pade-coder-rc-pade-bind-dogfood/README.md
+
+recordedUtc: 2026-11-08T00:33:22Z
+
+updatesInThisRepository:
+  - path: experiments/015-pade-coder-rc-pade-bind-dogfood/README.md
+    change: status set to live-complete on exp015_rc_pade_bind_v2; provenance links
+  - path: experiments/README.md
+    change: one-line result and narrative for 015 marked complete
+  - path: README.md
+    change: status blurb notes Experiment 015 closed the active 011/report seam
+
+consumerMirror:
+  repository: https://github.com/After-Certainty/pade-coder.git
+  path: experiments/002-rc-pade-bindings/README.md
+  role: consumer-side mirror of the same live run
+  canonicalProvenance: rc-pade Experiment 015 (do not duplicate YAML here)
+  localWorkingBranch: docs/experiment-002-point-at-rc-pade-015
+  localWorkingCopy: .work/experiment-015-cp7/pade-coder/
+  noteAtCapture: |
+    README updated and staged in local checkout
+    .work/experiment-015-cp7/pade-coder/ on branch
+    docs/experiment-002-point-at-rc-pade-015. Commit/push/PR in
+    After-Certainty/pade-coder still needed at capture time (no git
+    identity configured in that worktree; git config was not modified).
+  companionPullRequest:
+    url: https://github.com/After-Certainty/pade-coder/pull/18
+    title: docs: point Experiment 002 at rc-pade Experiment 015 provenance
+    statusAtReconciliation: open
+    note: opened after Checkpoint 7 capture; merge after rc-pade #28 lands
+      so links to rc-pade/main Experiment 015 resolve.
+
+implementationIssueRecorded:
+  - owningSurface: rc-pade Experiment 015 Coder template
+    issue: coder exp sync want with zero depends-on fails
+    fix: exp015_rc_pade_bind_v2 starts the install sync directly
+    recordedIn:
+      - checkpoint-3-provenance.yaml
+      - template-exp015_rc_pade_bind_v2/SNAPSHOT.md
+
+result: checkpoint-7-pass-docs-reconciled
+experiment015Result: complete

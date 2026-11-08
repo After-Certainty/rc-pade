@@ -1,0 +1,160 @@
+# Experiment 015 — Checkpoint 1: confirm exact baseline and reusable artifacts.
+# Documentation / inspection only. No Coder template or binding-seam changes.
+# Never records private signing keys, JWTs, GitHub tokens, AWS secrets,
+# account IDs, or numeric Google subjects.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: docs/experiment-015-pade-coder-rc-pade-bind-dogfood
+  commitAtCapture: 3a34a6bda97092c1cde15db44b77117fbcbcd638
+  runbook: experiments/015-pade-coder-rc-pade-bind-dogfood/README.md
+  bindCommandSquashMerge: 43226ef96ae09419b6253a6eb364fd44a0ac1305
+  bindCommandAncestorOfHEAD: true
+  dependency:
+    experiment: 014-signed-validation-handoff
+    status: complete on main
+    reusableMechanism: signed RC handoff verify → verified Profile → PADE bindings
+    newVariableIntroducedHere: |
+      replace active Experiment 011 adapter / validation-report seam with
+      pade-coder/modules/rc-pade-bindings invoking rc-pade bind
+
+padeCoder:
+  repository: https://github.com/After-Certainty/pade-coder.git
+  commitAtCapture: c40ba8c49c987f7b2ea9c1e42eb40fd6c36630a5
+  inspected:
+    - modules/pade/README.md
+    - modules/pade/main.tf
+    - modules/rc-pade-bindings/README.md
+    - modules/rc-pade-bindings/main.tf
+    - modules/rc-pade-bindings/scripts/bind.sh.tftpl
+    - experiments/002-rc-pade-bindings/README.md
+  optionalModule:
+    path: modules/rc-pade-bindings
+    syncName: after-certainty-rc-pade-bindings
+    displayName: "RC → PADE Bindings"
+    acceptsValidationReport: false
+    installsRcPade: false
+    invokes: "rc-pade bind --verified-profile ..."
+  consumerMirror:
+    path: experiments/002-rc-pade-bindings
+    role: same live run; Experiment 015 is canonical provenance
+
+pade:
+  version: v0.4.1
+  matchesExperiment014: true
+
+recordedUtc: 2026-11-07T22:16:30Z
+
+coder:
+  templateName: gcp-pade
+  activeTemplateVersion: exp014_signed_handoff_v4
+  activeTemplateActive: true
+  baselinePull:
+    command: coder templates pull gcp-pade <dest> --version exp014_signed_handoff_v4 --yes
+    unmodifiedPullManifestSHA256: 59bac334aa050ad34a0b5070f8546f066210d17f2e85e054e00a6cebafba1a00
+    matchesExperiment014Snapshot: true
+  repoHygieneNote: |
+    experiments/014-signed-validation-handoff/template-exp014_signed_handoff_v4/
+    differs from the live pull only by documented post-pull //go:build ignore
+    on verify-handoff/main.go so module go test does not require rc-demos.
+    Handoff bytes, policy, allowlist, and broker wiring are unchanged.
+  currentWorkspaceObservation:
+    name: pade-gcp
+    currentVersion: lucky_morgan36
+    outdatedRelativeToActive: true
+    note: |
+      Only workspace present at capture. It is not on exp014_signed_handoff_v4.
+      Experiment 014 workspaces (pade-gcp-014 / pade-gcp-014-fresh) are gone.
+      Checkpoint 1 treats the active template as the reproducible baseline;
+      later checkpoints must update/restart or create a fresh workspace on the
+      Experiment 015 template version.
+  realBindingsPath: ~/.config/pade/coder-bindings.yaml
+  existingPrerequisiteSyncName: after-certainty-rc-trusted-bindings
+  waitsOn: module.pade.scripts
+  modulePadePinInBaselineTemplate: 3e9184087665b2bc6ebe7d261d1fbbd88cf94b60
+  modulePadePinNote: |
+    Baseline still pins the Experiment 013/014-era modules/pade revision.
+    Checkpoint 2 may keep that pin for module.pade while adding
+    modules/rc-pade-bindings at c40ba8c, or document a deliberate bump.
+
+baselineActivePath:
+  displayName: "RC Signed Handoff → PADE Bindings (014 CP5)"
+  resource: coder_script.rc_trusted_bindings
+  stillUsesExperiment011Adapter: true
+  stillEmbedsValidationReport: true
+  pins:
+    rcDemosCommit: 853eab3c2c04f9d1059b2dbd64ea91996828a3a9
+    goRcProfilerCommit: 5d2e860e48842b89ec83414123a7e59228f61d36
+    rcPadeAdapterCommit: fd592a4c826fb6b8f005c11625122138c797ae63
+    goVersion: "1.26.10"
+    goTarball: go1.26.10.linux-amd64.tar.gz
+    goSHA256: ccfe7ae822d2c2f41f4fe7c956199967a4dac22d0ee0d2b2bfdb440aab3b20c5
+
+handoffInheritedFromExperiment014:
+  format: rc-demos-handoff-experiment-1
+  signatureAlgorithm: Ed25519 detached over exact evidence.json bytes
+  trustRoot: handoff.Verify over signed evidence + operator trusted.pub
+  producerBundlePath: experiments/014-signed-validation-handoff/producer-bundle/
+  templateInputsPath: experiments/014-signed-validation-handoff/template-exp014_signed_handoff_v4/rc-inputs/
+  livePullInputsMatchProducerBundle: true
+  profile:
+    path: profile.yaml
+    sha256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+    bytes: 1682
+  evidenceJson:
+    sha256: cf2e3c99a1178eb2200529e4747dc731652c29e509e47ac0f0cb6bdd783b5898
+  evidenceSig:
+    sha256: da37c1cae3ab4c71c3d323ca402dfaca1701edb62266869344b5d78e5af0fee7
+  trustedPub:
+    sha256: 2cf313dcc7b0733cdc164e8066dc8aff7134226ba64ed25f63bc48229b7749b6
+    form: raw 32-byte Ed25519 public key
+    ed25519RawPubkeyHex: ba60aecd80c86e42cea6188e01adf20ea959db331b7bfe105fe44a2bc493f556
+  policy:
+    sha256: a5f8f138e2ed5ca2d559d8711d7de50fadb0288c5c02532f8316c239a23007a4
+  allowCapabilities:
+    contents: "github.repo.read,github.repo.write"
+    sha256: 152d75d84cfffb6aa04e21658ae207a7dd4c092a0f2e4d2a762e784ba71b009c
+  validationReportStillPresentInBaseline:
+    sha256: aceb19dc7cc6717aa962fa088192388731a88e60f262e3a6a2264fa00dedb20f
+    roleInBaseline: post-verify Experiment 011 KnownFields contract
+    notHandoffTrustRoot: true
+    experiment015Target: remove from active path
+
+stopCondition:
+  question: |
+    Can the current live template reproduce the Experiment 014 verification
+    step without changing its trust model?
+  result: pass
+  reason: |
+    Active gcp-pade version exp014_signed_handoff_v4 pulls with the same
+    unmodified manifest SHA recorded by Experiment 014. Signed handoff bytes,
+    trusted.pub, policy, and allowlist digests match the retained producer
+    bundle. Verifier pins (rc-demos 853eab3, go-rc-profiler 5d2e860) are
+    unchanged. Workspace version drift does not affect template reproducibility.
+
+divergencesFromRunbookPins:
+  - id: workspace-not-on-active-014
+    severity: observation
+    detail: pade-gcp is on outdated lucky_morgan36; not a template reproducibility failure.
+  - id: baseline-still-011-seam
+    severity: expected
+    detail: Active path still builds experiments/011-coder-rc-bindings with --validation-report.
+  - id: module-pade-pin-older-than-rc-pade-bindings
+    severity: observation
+    detail: |
+      Baseline module.pade ref 3e91840 predates c40ba8c. Checkpoint 2 must
+      decide whether to keep that pin for module.pade while adding the optional
+      bindings module at c40ba8c.
+  - id: rc-pade-head-ahead-of-bind-squash
+    severity: observation
+    detail: |
+      HEAD 3a34a6b is the Experiment 015 plan commit on top of the bind squash
+      43226ef. No further bind-command changes observed between those commits.
+
+checkpoint1Result: |
+  Baseline confirmed. Experiment 014 signed handoff and trust material remain
+  reproducible from active template exp014_signed_handoff_v4 and are safe to
+  reuse without redesigning the signing format. Reusable rc-pade bind (43226ef)
+  and pade-coder modules/rc-pade-bindings (c40ba8c) are present at the pinned
+  revisions. Stop condition passed. Proceed to Checkpoint 2 only after agreeing
+  the smallest active-seam replacement.

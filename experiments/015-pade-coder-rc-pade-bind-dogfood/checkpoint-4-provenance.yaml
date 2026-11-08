@@ -1,0 +1,100 @@
+# Experiment 015 — Checkpoint 4: live broker authorization via rc-pade bind path.
+# Public evidence only. Never records private signing keys, JWTs, GitHub tokens,
+# AWS secrets, account IDs, or numeric Google subjects.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: docs/experiment-015-pade-coder-rc-pade-bind-dogfood
+  commitAtCapture: 3a34a6bda97092c1cde15db44b77117fbcbcd638
+  runbook: experiments/015-pade-coder-rc-pade-bind-dogfood/README.md
+  bindCommandPin: 43226ef96ae09419b6253a6eb364fd44a0ac1305
+  prior:
+    - experiments/015-pade-coder-rc-pade-bind-dogfood/checkpoint-3-provenance.yaml
+
+coder:
+  workspaceName: pade-gcp-015
+  templateName: gcp-pade
+  templateVersionAtCapture: exp015_rc_pade_bind_v2
+  hostname: coder-ksteffe-pade-gcp-015-root
+  handoffOk: true
+  installOk: true
+
+pade:
+  tag: v0.4.1
+  commit: 05fb036
+  binary: ~/.local/bin/pade
+  versionOutput: "pade version v0.4.1 (05fb036, built 2026-10-27T16:26:17Z)"
+
+broker:
+  endpoint: https://pade-broker-754719312452.us-central1.run.app
+  audience: https://pade-broker-754719312452.us-central1.run.app
+  identity: gce
+
+pathProvenance:
+  trustRoot: signed rc-demos handoff verified before rc-pade bind
+  bindingPath:
+    - verified-profile.yaml
+    - pade-coder/modules/rc-pade-bindings
+    - rc-pade bind --verified-profile
+    - module.pade.bindings_path
+  profile: ~/.config/pade/rc-downstream/verified-profile.yaml
+  profileSHA256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+  sessionManifest: ~/.config/pade/rc-downstream/development-session.yaml
+  sessionSHA256: b8fc0cf435e7ed8f0c087c4091b26a2080d4837c39bec9063a7e88f2a1ff0c50
+  bindings:
+    path: /home/ksteffe/.config/pade/coder-bindings.yaml
+    mode: "0600"
+    sha256: 4ce490e592a76c8a551951935a908c854d25f6a5b307faf57f123c829ee95743
+    usedModuleManagedPathOnly: true
+    producedBy: modules/rc-pade-bindings + rc-pade bind
+    capabilityNames: [github.repo.read, github.repo.write]
+    noExperiment011Adapter: true
+    noValidationReport: true
+
+ambientCredentialsBeforeExec:
+  GITHUB_TOKEN: unset
+  GH_TOKEN: unset
+  AWS_ACCESS_KEY_ID: unset
+  AWS_SECRET_ACCESS_KEY: unset
+  AWS_SESSION_TOKEN: unset
+  gh_hosts_yml: absent
+
+padeValidatePlanCapabilities: ok
+
+github:
+  github.repo.read:
+    result: authorized
+    probe: After-Certainty/after-certainty
+    childObservation: "repo_full_name=After-Certainty/after-certainty"
+    tokenPresentInChildOnly: true
+    tokenValueRecorded: false
+    padeExecExit: 0
+  github.repo.write:
+    result: broker-denied
+    padeExec: "broker resolve denied (http 403)"
+    childDidNotRun: true
+    padeExecExit: 1
+
+parentAfterExec:
+  GITHUB_TOKEN: unset
+  GH_TOKEN: unset
+
+authorizationBoundary:
+  unchangedFromExperiments011And013And014: true
+  note: |
+    Switching the active binding seam from Experiment 011 adapter to
+    modules/rc-pade-bindings + rc-pade bind does not expand PADE broker
+    authority. Read authorize / write deny for this GCE subject matches
+    Experiments 011, 013, and 014.
+
+safety:
+  durableProviderCredentialsInWorkspace: false
+  durableCredentialsInBindingsFile: false
+  rawGoogleTokenRecorded: false
+  numericGoogleSubjectRecorded: false
+  githubTokenRecorded: false
+  privateSigningKeyRecorded: false
+
+result: checkpoint-4-pass
+recordedUtc: 2026-11-07T22:42:55Z
+next: Checkpoint 5 — fail-closed real startup failure

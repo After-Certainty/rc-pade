@@ -1,7 +1,13 @@
 # Experiment 015 — dogfood rc-pade bind through the pade-coder optional module
 
-**Status:** Planned. This PR defines the experiment and checkpoints only. No live
-Coder provenance has been recorded yet.
+**Status:** Checkpoints 1–7 recorded. Core success met on `exp015_rc_pade_bind_v2`
+(workspaces `pade-gcp-015`, `pade-gcp-015-fresh`). Active path is signed handoff
+verify → `pade-coder/modules/rc-pade-bindings` → `rc-pade bind` (no Experiment 011
+adapter and no `validation-report.yaml` dependency/input on the active bind
+path). Live read authorize / write deny preserved.
+Canonical provenance: [`checkpoint-1-provenance.yaml`](checkpoint-1-provenance.yaml)
+through [`checkpoint-6-provenance.yaml`](checkpoint-6-provenance.yaml); retained
+template [`template-exp015_rc_pade_bind_v2/`](template-exp015_rc_pade_bind_v2/).
 
 ## Question
 
@@ -608,7 +614,13 @@ It does not establish:
 - that stock RC extension catalogs validate the Experiment 014 Case A Profile
   without its documented producer adaptation;
 - that local PADE bindings grant authority;
-- that PADE or pade-coder should own Runtime Conditions semantics.
+- that PADE or pade-coder should own Runtime Conditions semantics;
+- a tamper-resistant / TOCTOU-free transfer of the exact verified Profile
+  bytes from verifier to `rc-pade bind` — Coder sync only orders the steps;
+  the handoff is still workspace-local `verified-profile.yaml`, which the
+  same workspace user can rewrite before bind re-opens it (orchestration
+  handoff, not a security isolation boundary; a tighter integration could
+  pass the verified bytes directly to projection/bind).
 
 ## Suggested Cursor workflow
 

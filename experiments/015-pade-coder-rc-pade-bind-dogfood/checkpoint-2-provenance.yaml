@@ -1,0 +1,105 @@
+# Experiment 015 — Checkpoint 2: replace only the active binding seam.
+# Template push recorded. Live restart/fresh-home deferred to Checkpoint 3.
+# Never records private signing keys, JWTs, GitHub tokens, AWS secrets,
+# account IDs, or numeric Google subjects.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: docs/experiment-015-pade-coder-rc-pade-bind-dogfood
+  commitAtCapture: 3a34a6bda97092c1cde15db44b77117fbcbcd638
+  runbook: experiments/015-pade-coder-rc-pade-bind-dogfood/README.md
+  bindCommandPin: 43226ef96ae09419b6253a6eb364fd44a0ac1305
+
+padeCoder:
+  modulePadePinKeptFrom014: 3e9184087665b2bc6ebe7d261d1fbbd88cf94b60
+  moduleRcPadeBindingsPin: c40ba8c49c987f7b2ea9c1e42eb40fd6c36630a5
+  moduleRcPadeBindingsSyncName: after-certainty-rc-pade-bindings
+
+recordedUtc: 2026-11-07T22:22:06Z
+
+coder:
+  templateName: gcp-pade
+  pushedVersion: exp015_rc_pade_bind_v1
+  liveTemplateActive: true
+  previousActiveBaseline: exp014_signed_handoff_v4
+  retainedSource: experiments/015-pade-coder-rc-pade-bind-dogfood/template-exp015_rc_pade_bind_v1/
+  mainTfSHA256: 679a81441739ac848158a8d5d7505fe8caf257f854fe66b6b331a9bf98ae7ae9
+  livePullMainTfMatchesRetained: true
+  realBindingsPath: ~/.config/pade/coder-bindings.yaml
+  padeVersion: v0.4.1
+
+seamReplacement:
+  preserved:
+    - signed handoff materialization
+    - trusted.pub / policy.yaml / allow-capabilities.txt
+    - handoff.Verify → verified-profile.yaml
+    - module.pade dynamic mode / broker_binding / bindings_path / scripts
+    - GCE workload identity and deployed broker endpoint variable
+    - fail-closed empty bindings on verify failure
+  removedFromActivePath:
+    - experiments/011-coder-rc-bindings fetch/build/run
+    - validation-report.yaml embed and materialization
+    - --validation-report
+    - success-path binding writes from the verify script
+  added:
+    - coder_script.rc_handoff_verify sync after-certainty-rc-trusted-bindings (verify only)
+    - coder_script.rc_pade_install sync after-certainty-rc-pade-install → ~/.local/bin/rc-pade
+    - module.rc_pade_bindings @ c40ba8c invoking rc-pade bind --verified-profile
+
+syncGraph:
+  verify:
+    name: after-certainty-rc-trusted-bindings
+    waitsOn: module.pade.scripts
+    completesAfter: verified-profile.yaml written
+  install:
+    name: after-certainty-rc-pade-install
+    waitsOn: none
+    completesAfter: ~/.local/bin/rc-pade executable with bind subcommand
+  bind:
+    name: after-certainty-rc-pade-bindings
+    waitsOn:
+      - module.pade.scripts
+      - after-certainty-rc-trusted-bindings
+      - after-certainty-rc-pade-install
+    invokes: rc-pade bind --verified-profile ...
+
+staticAssertionsBeforePush:
+  result: pass
+  requiredPresent:
+    - module "rc_pade_bindings"
+    - verified_profile_path / policy_path / allow_capabilities
+    - broker_binding / bindings_path / pade_scripts from module.pade
+    - prerequisite sync names after-certainty-rc-trusted-bindings and after-certainty-rc-pade-install
+    - rc_pade_command ~/.local/bin/rc-pade
+    - verify script waits on module.pade.scripts
+    - modules/rc-pade-bindings bind.sh.tftpl contains rc-pade bind --verified-profile
+  forbiddenAbsentFromActivePath:
+    - experiments/011-coder-rc-bindings
+    - --validation-report
+    - rc_input_report_b64
+    - validation-report.yaml file in template tree
+  note: |
+    Template comments may mention validation-report.yaml only for stale-file
+    cleanup after prior Experiment 014 workspace homes. No report is embedded
+    or required for binding.
+
+handoffUnchanged:
+  profileSHA256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+  evidenceJsonSHA256: cf2e3c99a1178eb2200529e4747dc731652c29e509e47ac0f0cb6bdd783b5898
+  evidenceSigSHA256: da37c1cae3ab4c71c3d323ca402dfaca1701edb62266869344b5d78e5af0fee7
+  trustedPubSHA256: 2cf313dcc7b0733cdc164e8066dc8aff7134226ba64ed25f63bc48229b7749b6
+  policySHA256: a5f8f138e2ed5ca2d559d8711d7de50fadb0288c5c02532f8316c239a23007a4
+  allowCapabilities: "github.repo.read,github.repo.write"
+  matchesExperiment014ProducerBundle: true
+
+followUp:
+  liveVersionSupersededBy: exp015_rc_pade_bind_v2
+  reason: |
+    First live start of v1 failed because after-certainty-rc-pade-install called
+    `coder exp sync want` with zero depends-on. Fixed in Checkpoint 3 / v2.
+
+checkpoint2Result: |
+  Active binding seam replaced and pushed as gcp-pade / exp015_rc_pade_bind_v1
+  (initially active). Static assertions passed. Live pull main.tf matched
+  retained source. First live start later revealed a zero-dep sync want bug in
+  the installer; superseded by exp015_rc_pade_bind_v2 during Checkpoint 3.

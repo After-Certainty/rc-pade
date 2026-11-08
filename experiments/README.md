@@ -20,7 +20,7 @@ Sequential interoperability proofs for Runtime Conditions ↔ PADE via `rc-pade`
 | 012 | [`012-pade-v041-compatibility`](012-pade-v041-compatibility/) | Credential-free PADE v0.4.1 CLI validates/plans existing RC-to-PADE projections |
 | 013 | [`013-coder-durable-rc-inputs`](013-coder-durable-rc-inputs/) | Fresh Coder workspace obtains trusted RC/operator inputs from durable template source and regenerates module-managed PADE bindings without manual staging; live read authorize / write deny preserved |
 | 014 | [`014-signed-validation-handoff`](014-signed-validation-handoff/) | Fresh Coder verifies signed upstream RC validation handoff before unchanged rc-pade → 011 bind; live read authorize / write deny preserved |
-| 015 | [`015-pade-coder-rc-pade-bind-dogfood`](015-pade-coder-rc-pade-bind-dogfood/) | **Planned:** dogfood signed handoff → verified Profile → optional pade-coder module → current `rc-pade bind` → live PADE broker, removing the active 011/report compatibility seam |
+| 015 | [`015-pade-coder-rc-pade-bind-dogfood`](015-pade-coder-rc-pade-bind-dogfood/) | Fresh Coder dogfoods signed handoff → verified Profile → `pade-coder/modules/rc-pade-bindings` → `rc-pade bind`; active 011/report seam closed; live read authorize / write deny preserved |
 
 ```text
 001  Minimal RC profile → DevelopmentSession
@@ -39,7 +39,7 @@ Sequential interoperability proofs for Runtime Conditions ↔ PADE via `rc-pade`
 012  Released PADE v0.4.1 validates and plans the existing S3 projections (no broker)
 013  Durable trusted RC/operator inputs → fresh Coder → automatic 011 handoff (no manual staging)
 014  Signed upstream validation evidence → verified Coder handoff → unchanged rc-pade/PADE
-015  Planned dogfood: verified Profile → pade-coder optional module → rc-pade bind → live PADE broker
+015  Verified Profile → pade-coder optional module → rc-pade bind → live PADE broker (011/report seam closed)
 ```
 
 **005C** closes the identity/fulfillment substrate for the GCE-backed Coder workspace.
@@ -62,4 +62,4 @@ Sequential interoperability proofs for Runtime Conditions ↔ PADE via `rc-pade`
 
 **014** adds that stronger trust boundary on top of 013's durable delivery. The Coder consumer verifies a signed `rc-demos` validated-profile-handoff (PR #5) for exact Profile and resolved-extension bytes before the unchanged Experiment 011 project/bind path. Adversarial untrusted-handoff cases fail closed; restart and fresh-home recreate succeed; live `github.repo.read` authorize / `github.repo.write` deny is unchanged. Signature verification, Runtime Conditions validity, platform support, and PADE broker authorization remain separate decisions.
 
-**015** is the planned cross-repository dogfood of the cleanup that followed 014. It reuses the signed handoff trust boundary from 014, but replaces the historical Experiment 011 adapter and validator-specific `validation-report.yaml` in the active Coder path with the merged `pade-coder/modules/rc-pade-bindings` helper and the reusable `rc-pade bind --verified-profile` command. The setup PR records checkpoints only; live provenance will be added interactively during the experiment.
+**015** dogfoods that cleanup live. It reuses the Experiment 014 signed handoff trust boundary, then replaces the historical Experiment 011 adapter and validator-specific `validation-report.yaml` in the active Coder path with `pade-coder/modules/rc-pade-bindings` and `rc-pade bind --verified-profile`. Restart and fresh-home regeneration, fail-closed untrusted-handoff startup, and live `github.repo.read` authorize / `github.repo.write` deny all hold. This repository is the canonical provenance trail; `pade-coder` Experiment 002 is the consumer-side mirror of the same live run.

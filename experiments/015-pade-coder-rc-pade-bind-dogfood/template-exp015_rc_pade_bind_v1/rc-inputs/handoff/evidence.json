@@ -1,0 +1,28 @@
+{
+  "experiment": "rc-demos-handoff-experiment-1",
+  "profile_sha256": "53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19",
+  "validator": "github.com/runtimeconditions/go-rc-profiler/extensioncheck",
+  "producer_sha256": "6a2e02212fcc44a5b6f4bfebe894f4fc08836725b6639838f126f8638a06ce46",
+  "completed_calls": [
+    "ResolveExtensionClosure",
+    "ValidateProfileYAML"
+  ],
+  "resolved_extensions": [
+    {
+      "id": "https://runtimeconditions.io/extensions/common-integrations/v1alpha1/runtimeconditions.extension.yaml",
+      "sha256": "6f74ec92447e1997fadac6862f6dfc886bc42ea8ec73d1c4e2979d48d49bd157"
+    },
+    {
+      "id": "https://runtimeconditions.io/extensions/env-configuration/v1alpha1/runtimeconditions.extension.yaml",
+      "sha256": "36d3fb00f63f88f003e499153258522d6f8ea63677fb409a2cf3ffd5beb787dc"
+    },
+    {
+      "id": "https://runtimeconditions.io/extensions/google-analytics/0.1.0/runtimeconditions.extension.yaml",
+      "sha256": "db303fb46325eea8db4196ed83ad8ea6d91f5d49af3e226fea7cfaf1f8b5248d"
+    },
+    {
+      "id": "https://runtimeconditions.io/extensions/source-control/0.1.0/runtimeconditions.extension.yaml",
+      "sha256": "e6ab6b30b00cee3d345174a4aede0504f72013e5639b1aa23fc5e683995f704f"
+    }
+  ]
+}
