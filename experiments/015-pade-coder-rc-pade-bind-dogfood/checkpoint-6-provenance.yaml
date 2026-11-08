@@ -1,0 +1,134 @@
+# Experiment 015 — Checkpoint 6: close the Experiment 014 compatibility seam.
+# Claim-boundary summary from live Checkpoints 1–5. Documentation only.
+# Never records private signing keys, JWTs, GitHub tokens, AWS secrets,
+# account IDs, or numeric Google subjects.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: docs/experiment-015-pade-coder-rc-pade-bind-dogfood
+  commitAtCapture: 3a34a6bda97092c1cde15db44b77117fbcbcd638
+  runbook: experiments/015-pade-coder-rc-pade-bind-dogfood/README.md
+  bindCommandPin: 43226ef96ae09419b6253a6eb364fd44a0ac1305
+  prior:
+    - experiments/015-pade-coder-rc-pade-bind-dogfood/checkpoint-1-provenance.yaml
+    - experiments/015-pade-coder-rc-pade-bind-dogfood/checkpoint-2-provenance.yaml
+    - experiments/015-pade-coder-rc-pade-bind-dogfood/checkpoint-3-provenance.yaml
+    - experiments/015-pade-coder-rc-pade-bind-dogfood/checkpoint-4-provenance.yaml
+    - experiments/015-pade-coder-rc-pade-bind-dogfood/checkpoint-5-provenance.yaml
+
+recordedUtc: 2026-11-08T00:30:59Z
+
+liveReference:
+  templateName: gcp-pade
+  templateVersion: exp015_rc_pade_bind_v2
+  workspaceName: pade-gcp-015
+  hostname: coder-ksteffe-pade-gcp-015-root
+  bindingsSHA256: 4ce490e592a76c8a551951935a908c854d25f6a5b307faf57f123c829ee95743
+  verifiedProfileSHA256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+  liveRcPadeBinarySHA256: 88adcc36ab7422688e6b109e07fd92361c5f92ead9b02aa7245609af63961a87
+  validationReportPresent: false
+  experiment011AdapterPresent: false
+
+pathComparison:
+  experiment014:
+    text: |
+      signed handoff
+        → verify
+        → verified Profile
+        → compatibility validation-report
+        → Experiment 011 adapter
+        → PADE bindings
+    retainedHistoricalEvidence: true
+    activeLivePath: false
+  experiment015:
+    text: |
+      signed handoff
+        → verify
+        → verified Profile
+        → pade-coder/modules/rc-pade-bindings
+        → rc-pade bind --verified-profile
+        → PADE bindings
+    liveProven: true
+    pins:
+      padeCoderModuleRcPadeBindings: c40ba8c49c987f7b2ea9c1e42eb40fd6c36630a5
+      rcPadeBind: 43226ef96ae09419b6253a6eb364fd44a0ac1305
+      modulePade: 3e9184087665b2bc6ebe7d261d1fbbd88cf94b60
+      pade: v0.4.1
+
+compatibilitySeamClosed:
+  noLongerRequiredOnActivePath:
+    - experiments/011-coder-rc-bindings adapter binary/source
+    - validation-report.yaml
+    - --validation-report
+    - validator module name/version in rc-pade bind interface
+    - validator-specific per-condition report shape
+  evidence:
+    templateStatic:
+      exp015_rc_pade_bind_v2_embeds_011: false
+      exp015_rc_pade_bind_v2_embeds_validation_report: false
+      exp014_signed_handoff_v4_embeds_011: true
+      exp014_signed_handoff_v4_embeds_validation_report: true
+    liveWorkspace:
+      validationReport: ABSENT
+      experiment011Adapter: ABSENT
+      verifyLog: complete_verify_only next=modules/rc-pade-bindings
+      installLog: building_rc_pade .../cmd/rc-pade
+    identicalBrokerOnlyBindingsDigestWith014: true
+
+intentionallyUnchanged:
+  signedHandoffFormat:
+    status: still experimental
+    reusedFrom: experiments/014-signed-validation-handoff/producer-bundle/
+    redesignedFor015: false
+  producerSideSourceControlCatalogAdaptation:
+    owner: upstream Runtime Conditions tooling/catalog
+    notAnRcPadeBindingConcern: true
+  brokerAuthorization:
+    github.repo.read: authorized
+    github.repo.write: broker-denied (http 403)
+    matchesExperiments011_013_014: true
+  padeCore:
+    awareOfRuntimeConditions: false
+    consumes: module-managed broker-only bindings only
+
+claimBoundary:
+  trustedHandoff_ne_platformSupport: true
+  platformSupport_ne_localBinding: true
+  localBinding_ne_brokerAuthorization: true
+  brokerAuthorization_ne_unrestrictedProviderAuthority: true
+
+whatSuccessProves: |
+  A real GCE-backed Coder lifecycle can use the current reusable boundaries:
+
+    trusted signed RC handoff
+            ↓
+    verified Profile bytes
+            ↓
+    pade-coder optional bindings module
+            ↓
+    rc-pade bind
+            ↓
+    module-managed PADE bindings
+            ↓
+    PADE v0.4.1
+            ↓
+    broker authorization
+
+  with no active Experiment 011 adapter, no active validator-specific
+  validation-report.yaml, no manual bindings staging, restart and fresh-home
+  regeneration, fail-closed startup behavior, live read authorization, and
+  live write denial.
+
+whatSuccessDoesNotProve:
+  - normative Runtime Conditions signing format
+  - production signing-key lifecycle or PKI
+  - production rc-pade distribution/update mechanism
+  - universal Coder compatibility
+  - support for every Runtime Conditions extension
+  - that stock RC extension catalogs validate the Experiment 014 Case A Profile
+    without its documented producer adaptation
+  - that local PADE bindings grant authority
+  - that PADE or pade-coder should own Runtime Conditions semantics
+
+result: checkpoint-6-pass-seam-closed
+next: Checkpoint 7 — synchronize consumer-side evidence (README + pade-coder Experiment 002 pointer)

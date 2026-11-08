@@ -1,0 +1,143 @@
+# Experiment 015 — Checkpoint 3: fresh/restart happy-path lifecycle.
+# Public evidence only. Never records private signing keys, JWTs, GitHub tokens,
+# AWS secrets, account IDs, or numeric Google subjects.
+
+rcPade:
+  repository: https://github.com/After-Certainty/rc-pade.git
+  branch: docs/experiment-015-pade-coder-rc-pade-bind-dogfood
+  commitAtCapture: 3a34a6bda97092c1cde15db44b77117fbcbcd638
+  runbook: experiments/015-pade-coder-rc-pade-bind-dogfood/README.md
+  bindCommandPin: 43226ef96ae09419b6253a6eb364fd44a0ac1305
+  liveRcPadeBinarySHA256: 88adcc36ab7422688e6b109e07fd92361c5f92ead9b02aa7245609af63961a87
+  prior:
+    - experiments/015-pade-coder-rc-pade-bind-dogfood/checkpoint-1-provenance.yaml
+    - experiments/015-pade-coder-rc-pade-bind-dogfood/checkpoint-2-provenance.yaml
+
+padeCoder:
+  modulePadePin: 3e9184087665b2bc6ebe7d261d1fbbd88cf94b60
+  moduleRcPadeBindingsPin: c40ba8c49c987f7b2ea9c1e42eb40fd6c36630a5
+
+recordedUtc: 2026-11-07T22:41:29Z
+
+coder:
+  templateName: gcp-pade
+  liveTemplateVersion: exp015_rc_pade_bind_v2
+  liveTemplateActive: true
+  retainedSource: experiments/015-pade-coder-rc-pade-bind-dogfood/template-exp015_rc_pade_bind_v2/
+  mainTfSHA256: 0fbe9e9c1d30429ca4a91333aa13284825e681301da31081849af8217bc65060
+  livePullMainTfMatchesRetained: true
+  manualStaging: false
+
+templateFixBetweenV1AndV2:
+  v1Failure:
+    version: exp015_rc_pade_bind_v1
+    symptom: |
+      after-certainty-rc-pade-install exited immediately; modules/rc-pade-bindings
+      waited forever; bindings remained empty (capabilities: {}).
+    rootCause: |
+      Installer called `coder exp sync want "$SELF"` with zero depends-on.
+      Coder requires: want <unit> <depends-on...>.
+  v2Fix:
+    version: exp015_rc_pade_bind_v2
+    change: installer calls `coder exp sync start` directly when it has no deps
+
+pade:
+  version: v0.4.1
+  commit: 05fb036
+  binary: ~/.local/bin/pade
+  versionOutput: "pade version v0.4.1 (05fb036, built 2026-10-27T16:26:17Z)"
+
+broker:
+  endpoint: https://pade-broker-754719312452.us-central1.run.app
+  audience: https://pade-broker-754719312452.us-central1.run.app
+  identity: gce
+
+emptyBindingsPlaceholder:
+  path: ~/.config/pade/coder-bindings.yaml
+  mode: "0600"
+  sha256: d055820dc8a34a7cfc756caca332a80498a7271531d3202c36263db61b65d4bb
+  note: module.pade dynamic-mode placeholder before verify/install/bind complete
+
+bindingsAfterRcPadeBind:
+  path: ~/.config/pade/coder-bindings.yaml
+  mode: "0600"
+  sha256: 4ce490e592a76c8a551951935a908c854d25f6a5b307faf57f123c829ee95743
+  capabilityNames: [github.repo.read, github.repo.write]
+  allBrokerBound: true
+  noCredentialMaterial: true
+  matchesExperiment014BindingsDigest: true
+
+verifiedProfile:
+  path: ~/.config/pade/rc-downstream/verified-profile.yaml
+  sha256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+  bytes: 1682
+
+sessionManifest:
+  path: ~/.config/pade/rc-downstream/development-session.yaml
+  sha256: b8fc0cf435e7ed8f0c087c4091b26a2080d4837c39bec9063a7e88f2a1ff0c50
+  intentOnly: true
+  noSecretKeywords: true
+
+negativesObservedOnSuccess:
+  validationReportRequired: false
+  experiment011AdapterBinaryPresent: false
+  privateSigningKeyPresent: false
+
+syncPathObserved:
+  - after-certainty-pade-install_script
+  - after-certainty-rc-trusted-bindings
+  - after-certainty-rc-pade-install
+  - after-certainty-rc-pade-bindings
+
+proofAUpdateExistingHomeOntoV2:
+  workspaceName: pade-gcp-015
+  hostname: coder-ksteffe-pade-gcp-015-root
+  action: coder update pade-gcp-015 onto exp015_rc_pade_bind_v2
+  fromVersion: exp015_rc_pade_bind_v1
+  handoffOk: true
+  installOk: true
+  handoffVerified: true
+  bindingsBeforeSha256: d055820dc8a34a7cfc756caca332a80498a7271531d3202c36263db61b65d4bb
+  bindingsAfterSha256: 4ce490e592a76c8a551951935a908c854d25f6a5b307faf57f123c829ee95743
+  validationReportAbsent: true
+  experiment011AdapterAbsent: true
+
+proofBRestartExistingHome:
+  workspaceName: pade-gcp-015
+  hostname: coder-ksteffe-pade-gcp-015-root
+  action: coder restart pade-gcp-015
+  handoffOk: true
+  installOk: true
+  handoffVerified: true
+  bindingsBeforeSha256: d055820dc8a34a7cfc756caca332a80498a7271531d3202c36263db61b65d4bb
+  bindingsAfterSha256: 4ce490e592a76c8a551951935a908c854d25f6a5b307faf57f123c829ee95743
+  validationReportAbsent: true
+  experiment011AdapterAbsent: true
+
+proofCFreshHome:
+  workspaceName: pade-gcp-015-fresh
+  hostname: coder-ksteffe-pade-gcp-015-fresh-root
+  createdFrom: exp015_rc_pade_bind_v2
+  copyParametersFrom: pade-gcp-015
+  handoffOk: true
+  installOk: true
+  handoffVerified: true
+  verifiedProfileSHA256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+  bindingsBeforeSha256: d055820dc8a34a7cfc756caca332a80498a7271531d3202c36263db61b65d4bb
+  bindingsAfterSha256: 4ce490e592a76c8a551951935a908c854d25f6a5b307faf57f123c829ee95743
+  sessionSHA256: b8fc0cf435e7ed8f0c087c4091b26a2080d4837c39bec9063a7e88f2a1ff0c50
+  liveRcPadeBinarySHA256: 88adcc36ab7422688e6b109e07fd92361c5f92ead9b02aa7245609af63961a87
+  validationReportAbsent: true
+  experiment011AdapterAbsent: true
+  privateSigningKeyInWorkspace: false
+
+result: checkpoint-3-pass-live
+
+checkpoint3Result: |
+  Live happy-path lifecycle proven on exp015_rc_pade_bind_v2 after fixing the
+  v1 zero-dependency sync want bug. Update, restart, and fresh-home all
+  rematerialize the signed handoff, install pinned rc-pade, and complete
+  modules/rc-pade-bindings → rc-pade bind with mode-0600 broker-only
+  github.repo.read/write bindings (digest matches Experiment 014). No manual
+  staging, no Experiment 011 adapter, no validation-report.yaml. Live broker
+  authorize/deny remains Checkpoint 4.

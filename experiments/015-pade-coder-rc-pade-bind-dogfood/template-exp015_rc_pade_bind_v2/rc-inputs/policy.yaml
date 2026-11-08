@@ -1,0 +1,45 @@
+# Experiment 008 projection policy for the composed rc-demos Profile.
+#
+# Classification uses kind + interfaceType only (not condition instance names).
+# HTTP and Google Analytics are explicit outsidePADE for this experiment only.
+# source_control/git uses require + project + cover (Reading 1 access mappings).
+apiVersion: rc-pade.local/v1alpha1
+kind: ProjectionPolicy
+rules:
+  - match:
+      kind: api
+      interfaceType: http
+    outsidePADE: true
+  - match:
+      kind: google.analytics
+      interfaceType: web
+    outsidePADE: true
+  - match:
+      kind: source_control
+      interfaceType: git
+    require:
+      - path: interface.provider
+        equals: github
+    project:
+      - when:
+          - path: interface.access
+            contains: fetch
+        capability: github.repo.read
+        access: read
+      - when:
+          - path: interface.access
+            contains: pull
+        capability: github.repo.read
+        access: read
+      - when:
+          - path: interface.access
+            contains: push
+        capability: github.repo.write
+        access: write
+      - when:
+          - path: interface.access
+            contains: clone
+        capability: github.repo.read
+        access: read
+    cover:
+      - interface.access

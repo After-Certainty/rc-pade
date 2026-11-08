@@ -1,0 +1,52 @@
+apiVersion: runtimeconditions.io/v1alpha1
+kind: RuntimeConditionsProfile
+metadata:
+    name: web-demo-dev-container
+    labels:
+        lifecycle.example.com/stage: development
+        tooling.runtimeconditions.io/generated-by: profile-compose
+workload:
+    uri: https://github.com/runtimeconditions/rc-demos/tree/main/dev-container-profile#dev-container
+    version: demo
+extensions:
+    - https://runtimeconditions.io/extensions/common-integrations/v1alpha1/runtimeconditions.extension.yaml
+    - https://runtimeconditions.io/extensions/env-configuration/v1alpha1/runtimeconditions.extension.yaml
+    - https://runtimeconditions.io/extensions/google-analytics/0.1.0/runtimeconditions.extension.yaml
+    - https://runtimeconditions.io/extensions/source-control/0.1.0/runtimeconditions.extension.yaml
+conditions:
+    - name: content-api
+      kind: api
+      interface:
+        type: http
+        spec:
+            format: openapi
+            uri: catalog://api/default/demo-content
+            version: 1.0.0
+        operations:
+            - method: GET
+              path: /message
+              responseSchema:
+                message: string
+      configuration:
+        env:
+            - property: baseUrl
+              name: CONTENT_API_URL
+    - name: site-analytics
+      kind: google.analytics
+      interface:
+        type: web
+        events:
+            - page_view
+      configuration:
+        env:
+            - property: measurementId
+              name: GA_MEASUREMENT_ID
+    - name: application-source
+      kind: source_control
+      interface:
+        type: git
+        provider: github
+        access:
+            - fetch
+            - pull
+            - push

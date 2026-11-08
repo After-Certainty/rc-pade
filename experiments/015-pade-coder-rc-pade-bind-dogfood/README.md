@@ -1,7 +1,12 @@
 # Experiment 015 — dogfood rc-pade bind through the pade-coder optional module
 
-**Status:** Planned. This PR defines the experiment and checkpoints only. No live
-Coder provenance has been recorded yet.
+**Status:** Checkpoints 1–7 recorded. Core success met on `exp015_rc_pade_bind_v2`
+(workspaces `pade-gcp-015`, `pade-gcp-015-fresh`). Active path is signed handoff
+verify → `pade-coder/modules/rc-pade-bindings` → `rc-pade bind` (no Experiment 011
+adapter / no `validation-report.yaml`). Live read authorize / write deny preserved.
+Canonical provenance: [`checkpoint-1-provenance.yaml`](checkpoint-1-provenance.yaml)
+through [`checkpoint-6-provenance.yaml`](checkpoint-6-provenance.yaml); retained
+template [`template-exp015_rc_pade_bind_v2/`](template-exp015_rc_pade_bind_v2/).
 
 ## Question
 

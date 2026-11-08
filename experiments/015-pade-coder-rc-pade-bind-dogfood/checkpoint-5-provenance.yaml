@@ -1,0 +1,73 @@
+# Experiment 015 — Checkpoint 5: fail-closed real startup failure + restore.
+# Public evidence only. Never records private signing keys, JWTs, GitHub tokens,
+# AWS secrets, account IDs, or numeric Google subjects.
+
+purpose: |
+  Demonstrate that when signed-handoff verification fails during the real Coder
+  startup lifecycle on the Experiment 015 path (modules/rc-pade-bindings +
+  rc-pade bind), the module-managed bindings file remains empty and the bind
+  helper sync cannot complete. Then restore the valid template and confirm
+  automatic regeneration.
+
+brokenTemplate:
+  name: gcp-pade
+  version: exp015_live_untrusted_sig
+  activate: false
+  change: xor first byte of rc-inputs/handoff/evidence.sig (still 64 bytes)
+  evidenceSigSha256After: d2110ab424c8f11dd5e331c8cd62d9b321177332796c3f22996f495466ceaf46
+  evidenceSigSha256Valid: da37c1cae3ab4c71c3d323ca402dfaca1701edb62266869344b5d78e5af0fee7
+  matchesExperiment014CorruptionDigest: true
+  note: |
+    Pushed from a temporary working copy of template-exp015_rc_pade_bind_v2 with
+    only evidence.sig corrupted. Active template remained exp015_rc_pade_bind_v2.
+
+workspace:
+  name: pade-gcp-015-live-untrusted
+  hostname: coder-ksteffe-pade-gcp-015-live-untrusted-root
+
+failureRun:
+  templateVersion: exp015_live_untrusted_sig
+  bindingsBeforeVerifySha256: d055820dc8a34a7cfc756caca332a80498a7271531d3202c36263db61b65d4bb
+  verifierCategory: evidence_untrusted
+  verifierDetail: "signature does not match configured trusted public key"
+  verifyRc: 1
+  failClosedReason: untrusted_handoff
+  rcPadeBindInvoked: false
+  modulesRcPadeBindingsCompleted: false
+  verifiedProfileWritten: false
+  handoffOk: false
+  verifyOk: false
+  # Installer has no deps and may still complete; bind helper waits on verify.
+  installOk: true
+  syncComplete: false
+  syncCompleteSkippedAfterFailure: true
+  moduleManagedBindings:
+    path: /home/ksteffe/.config/pade/coder-bindings.yaml
+    mode: "0600"
+    capabilities: {}
+    sha256: 4d85599c791c64fc84bd9b89b9e975105f284c5bddad5ded01c84518ae1e4b9a
+    usableBindings: false
+    matchesExperiment014FailClosedDigest: true
+
+restoreRun:
+  updatedToTemplateVersion: exp015_rc_pade_bind_v2
+  activeTemplateConfirmed: true
+  method: coder update (workspace out of date vs active version)
+  handoffVerified: true
+  installOk: true
+  syncComplete: true
+  handoffOk: true
+  verifyOk: true
+  moduleManagedBindings:
+    mode: "0600"
+    sha256: 4ce490e592a76c8a551951935a908c854d25f6a5b307faf57f123c829ee95743
+    capabilityNames: [github.repo.read, github.repo.write]
+  evidenceSigSha256: da37c1cae3ab4c71c3d323ca402dfaca1701edb62266869344b5d78e5af0fee7
+  verifiedProfileSha256: 53fe0bca5664c9b889304c881d6643cec163f449a9d02a91fd5a6d635ad62e19
+  result: pass
+
+workspaceDeletedAfterEvidence: true
+
+result: pass
+recordedUtc: 2026-11-07T22:50:25Z
+next: Checkpoint 6 — compare against Experiment 014 and close the compatibility seam
