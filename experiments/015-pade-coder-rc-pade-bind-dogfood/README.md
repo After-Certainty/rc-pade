@@ -613,7 +613,13 @@ It does not establish:
 - that stock RC extension catalogs validate the Experiment 014 Case A Profile
   without its documented producer adaptation;
 - that local PADE bindings grant authority;
-- that PADE or pade-coder should own Runtime Conditions semantics.
+- that PADE or pade-coder should own Runtime Conditions semantics;
+- a tamper-resistant / TOCTOU-free transfer of the exact verified Profile
+  bytes from verifier to `rc-pade bind` — Coder sync only orders the steps;
+  the handoff is still workspace-local `verified-profile.yaml`, which the
+  same workspace user can rewrite before bind re-opens it (orchestration
+  handoff, not a security isolation boundary; a tighter integration could
+  pass the verified bytes directly to projection/bind).
 
 ## Suggested Cursor workflow
 

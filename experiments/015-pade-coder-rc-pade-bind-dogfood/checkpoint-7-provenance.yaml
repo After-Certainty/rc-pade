@@ -26,12 +26,18 @@ consumerMirror:
   canonicalProvenance: rc-pade Experiment 015 (do not duplicate YAML here)
   localWorkingBranch: docs/experiment-002-point-at-rc-pade-015
   localWorkingCopy: .work/experiment-015-cp7/pade-coder/
-  note: |
+  noteAtCapture: |
     README updated and staged in local checkout
     .work/experiment-015-cp7/pade-coder/ on branch
     docs/experiment-002-point-at-rc-pade-015. Commit/push/PR in
-    After-Certainty/pade-coder still needed (no git identity configured in
-    that worktree; git config was not modified).
+    After-Certainty/pade-coder still needed at capture time (no git
+    identity configured in that worktree; git config was not modified).
+  companionPullRequest:
+    url: https://github.com/After-Certainty/pade-coder/pull/18
+    title: docs: point Experiment 002 at rc-pade Experiment 015 provenance
+    statusAtReconciliation: open
+    note: opened after Checkpoint 7 capture; merge after rc-pade #28 lands
+      so links to rc-pade/main Experiment 015 resolve.
 
 implementationIssueRecorded:
   - owningSurface: rc-pade Experiment 015 Coder template

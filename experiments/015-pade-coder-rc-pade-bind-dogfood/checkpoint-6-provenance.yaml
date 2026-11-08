@@ -129,6 +129,11 @@ whatSuccessDoesNotProve:
     without its documented producer adaptation
   - that local PADE bindings grant authority
   - that PADE or pade-coder should own Runtime Conditions semantics
+  - tamper-resistant / TOCTOU-free transfer of the exact verified Profile
+    bytes from verifier to rc-pade bind (Coder sync orders the steps; the
+    handoff remains workspace-local verified-profile.yaml, rewriteable by
+    the same workspace user before bind re-opens it — orchestration
+    handoff, not a security isolation boundary)
 
 result: checkpoint-6-pass-seam-closed
 next: Checkpoint 7 — synchronize consumer-side evidence (README + pade-coder Experiment 002 pointer)
