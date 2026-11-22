@@ -5,10 +5,26 @@ const (
 	ProjectionPolicyKind       = "ProjectionPolicy"
 )
 
+// OnUnsupportedOptional values for ProjectionPolicy.
+const (
+	// UnsupportedOptionalFail is the default: unmatched optional Conditions
+	// fail closed at the platform-support boundary.
+	UnsupportedOptionalFail = "fail"
+	// UnsupportedOptionalContinue records unmatched optional Conditions in the
+	// local support report and continues projecting the remainder.
+	UnsupportedOptionalContinue = "continue"
+)
+
 type ProjectionPolicy struct {
-	APIVersion string           `yaml:"apiVersion"`
-	Kind       string           `yaml:"kind"`
-	Rules      []ProjectionRule `yaml:"rules"`
+	APIVersion string `yaml:"apiVersion"`
+	Kind       string `yaml:"kind"`
+	// OnUnsupportedOptional controls unmatched optional Conditions.
+	// Empty or "fail" (default) fails closed. "continue" skips them after
+	// recording unsupported_optional in the local PlatformSupportReport.
+	// This is operator platform-support policy, not Runtime Conditions
+	// optionality semantics and not broker authorization.
+	OnUnsupportedOptional string           `yaml:"onUnsupportedOptional,omitempty"`
+	Rules                 []ProjectionRule `yaml:"rules"`
 }
 
 // ProjectionRule maps a matched Runtime Conditions condition either into PADE

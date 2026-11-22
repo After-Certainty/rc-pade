@@ -34,6 +34,7 @@ func runGenerate(args []string) {
 	profilePath := fs.String("profile", "", "path to a RuntimeConditionsProfile YAML file")
 	policyPath := fs.String("policy", "", "path to an rc-pade ProjectionPolicy YAML file")
 	name := fs.String("name", "", "override PADE metadata.name")
+	supportReport := fs.String("support-report", "", "optional path for a local PlatformSupportReport YAML (not an upstream RC standard)")
 	_ = fs.Parse(args)
 
 	if *profilePath == "" || *policyPath == "" {
@@ -50,7 +51,12 @@ func runGenerate(args []string) {
 		fatal(err)
 	}
 
-	session, err := projector.Project(profile, policy, *name)
+	session, report, err := projector.ProjectWithSupport(profile, policy, *name)
+	if *supportReport != "" {
+		if writeErr := writeSupportReport(*supportReport, report); writeErr != nil {
+			fatal(writeErr)
+		}
+	}
 	if err != nil {
 		fatal(err)
 	}
@@ -60,6 +66,17 @@ func runGenerate(args []string) {
 		fatal(fmt.Errorf("marshal DevelopmentSession: %w", err))
 	}
 	_, _ = os.Stdout.Write(out)
+}
+
+func writeSupportReport(path string, report model.PlatformSupportReport) error {
+	out, err := yaml.Marshal(report)
+	if err != nil {
+		return fmt.Errorf("marshal PlatformSupportReport: %w", err)
+	}
+	if err := os.WriteFile(path, out, 0600); err != nil {
+		return fmt.Errorf("write PlatformSupportReport: %w", err)
+	}
+	return nil
 }
 
 func readYAML(path string, into any) error {
@@ -89,6 +106,6 @@ func fatal(err error) {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, "usage:")
-	fmt.Fprintln(os.Stderr, "  rc-pade generate --profile runtime-conditions.yaml --policy policy.yaml [--name session-name]")
-	fmt.Fprintln(os.Stderr, "  rc-pade bind --verified-profile verified-profile.yaml --policy policy.yaml --broker-binding broker.json --allow-capabilities cap.one,cap.two --output /absolute/bindings.yaml [--session-out /absolute/session.yaml]")
+	fmt.Fprintln(os.Stderr, "  rc-pade generate --profile runtime-conditions.yaml --policy policy.yaml [--name session-name] [--support-report report.yaml]")
+	fmt.Fprintln(os.Stderr, "  rc-pade bind --verified-profile verified-profile.yaml --policy policy.yaml --broker-binding broker.json --allow-capabilities cap.one,cap.two --output /absolute/bindings.yaml [--session-out /absolute/session.yaml] [--support-report report.yaml]")
 }

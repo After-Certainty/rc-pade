@@ -202,6 +202,94 @@ func TestBindFailsClosedAfterOutputIsKnown(t *testing.T) {
 	}
 }
 
+func TestBindWritesSupportReportAndHonorsOptionalContinue(t *testing.T) {
+	f := newBindFixture(t)
+	dir := filepath.Dir(f.o.output)
+	f.o.supportReport = filepath.Join(dir, "support-report.yaml")
+
+	profile := `apiVersion: runtimeconditions.io/v1alpha1
+kind: RuntimeConditionsProfile
+metadata:
+  name: mixed-optional
+conditions:
+  - kind: aws.s3
+    interface:
+      type: bucket
+      operations:
+        - name: PutObject
+  - optional: true
+    kind: api
+    interface:
+      type: http
+`
+	policy := `apiVersion: rc-pade.local/v1alpha1
+kind: ProjectionPolicy
+onUnsupportedOptional: continue
+rules:
+  - match:
+      kind: aws.s3
+      interfaceType: bucket
+    operations:
+      PutObject:
+        capability: aws.s3.bucket.write
+        access: write
+`
+	if err := os.WriteFile(f.o.verifiedProfile, []byte(profile), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(f.o.policy, []byte(policy), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := runBind(f.o); err != nil {
+		t.Fatal(err)
+	}
+	assertConsumerBindings(t, f.o.output, "aws.s3.bucket.write")
+
+	raw, err := os.ReadFile(f.o.supportReport)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var report struct {
+		Kind                                string `yaml:"kind"`
+		ContinuedDespiteUnsupportedOptional bool   `yaml:"continuedDespiteUnsupportedOptional"`
+		Conditions                          []struct {
+			Outcome string `yaml:"outcome"`
+		} `yaml:"conditions"`
+	}
+	if err := yaml.Unmarshal(raw, &report); err != nil {
+		t.Fatal(err)
+	}
+	if report.Kind != "PlatformSupportReport" {
+		t.Fatalf("kind = %q", report.Kind)
+	}
+	if !report.ContinuedDespiteUnsupportedOptional {
+		t.Fatal("expected continuedDespiteUnsupportedOptional")
+	}
+	if len(report.Conditions) != 2 || report.Conditions[1].Outcome != "unsupported_optional" {
+		t.Fatalf("report = %#v", report)
+	}
+}
+
+func TestBindSupportReportOnFailureLeavesEmptyBindings(t *testing.T) {
+	f := newBindFixture(t)
+	f.o.supportReport = filepath.Join(filepath.Dir(f.o.output), "support-report.yaml")
+	if err := os.WriteFile(f.o.policy, []byte("apiVersion: rc-pade.local/v1alpha1\nkind: ProjectionPolicy\nrules: []\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := runBind(f.o); err == nil {
+		t.Fatal("expected unsupported failure")
+	}
+	assertConsumerBindings(t, f.o.output)
+	raw, err := os.ReadFile(f.o.supportReport)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(raw), "unsupported_required") {
+		t.Fatalf("support report missing unsupported_required: %s", raw)
+	}
+}
+
 func TestBindRejectsRelativeBindingsTarget(t *testing.T) {
 	f := newBindFixture(t)
 	f.o.output = "bindings.yaml"

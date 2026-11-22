@@ -23,6 +23,7 @@ type bindOptions struct {
 	allowed         string
 	output          string
 	session         string
+	supportReport   string
 }
 
 type brokerBinding struct {
@@ -47,6 +48,7 @@ func runBindCommand(args []string) {
 	allowed := fs.String("allow-capabilities", "", "operator-owned comma-separated capability allowlist")
 	output := fs.String("output", "", "absolute PADE Consumer bindings path to replace atomically")
 	session := fs.String("session-out", "", "optional absolute path for the generated PADE DevelopmentSession")
+	supportReport := fs.String("support-report", "", "optional absolute path for a local PlatformSupportReport YAML (not an upstream RC standard)")
 	_ = fs.Parse(args)
 
 	if err := runBind(bindOptions{
@@ -56,6 +58,7 @@ func runBindCommand(args []string) {
 		allowed:         *allowed,
 		output:          *output,
 		session:         *session,
+		supportReport:   *supportReport,
 	}); err != nil {
 		fatal(err)
 	}
@@ -73,6 +76,9 @@ func runBind(c bindOptions) error {
 	}
 	if c.session != "" && !filepath.IsAbs(c.session) {
 		return errors.New("--session-out must be an absolute path when provided")
+	}
+	if c.supportReport != "" && !filepath.IsAbs(c.supportReport) {
+		return errors.New("--support-report must be an absolute path when provided")
 	}
 
 	if c.verifiedProfile == "" || c.policy == "" || c.broker == "" || c.allowed == "" {
@@ -92,7 +98,12 @@ func runBind(c bindOptions) error {
 	if err := readYAML(c.policy, &policy); err != nil {
 		return fmt.Errorf("operator projection policy: %w", err)
 	}
-	session, err := projector.Project(profile, policy, "")
+	session, report, err := projector.ProjectWithSupport(profile, policy, "")
+	if c.supportReport != "" {
+		if writeErr := writeSupportReport(c.supportReport, report); writeErr != nil {
+			return writeErr
+		}
+	}
 	if err != nil {
 		return fmt.Errorf("unsupported Runtime Conditions demand: %w", err)
 	}
