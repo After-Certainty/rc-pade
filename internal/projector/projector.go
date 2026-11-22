@@ -27,12 +27,12 @@ func Project(profile model.RuntimeConditionsProfile, policy model.ProjectionPoli
 	}
 
 	capabilities := map[string]model.CapabilityRequest{}
-	for _, condition := range profile.Conditions {
-		rule, err := matchingRule(policy.Rules, condition)
+	for i, condition := range profile.Conditions {
+		rule, err := matchingRule(policy.Rules, condition, i)
 		if err != nil {
 			return model.DevelopmentSession{}, err
 		}
-		if err := projectCondition(condition, rule, capabilities); err != nil {
+		if err := projectCondition(condition, rule, capabilities, i); err != nil {
 			return model.DevelopmentSession{}, err
 		}
 	}
@@ -58,7 +58,8 @@ func Project(profile model.RuntimeConditionsProfile, policy model.ProjectionPoli
 	}, nil
 }
 
-func projectCondition(condition model.Condition, rule model.ProjectionRule, capabilities map[string]model.CapabilityRequest) error {
+func projectCondition(condition model.Condition, rule model.ProjectionRule, capabilities map[string]model.CapabilityRequest, index int) error {
+	label := model.ConditionLabel(condition, index)
 	hasOps := len(rule.Operations) > 0
 	hasProject := len(rule.Project) > 0
 	hasRequire := len(rule.Require) > 0
@@ -67,39 +68,40 @@ func projectCondition(condition model.Condition, rule model.ProjectionRule, capa
 
 	if rule.OutsidePADE {
 		if hasOps || projectFamily {
-			return fmt.Errorf("projection rule for %s/%s sets outsidePADE with operations/project/require/cover; choose one classification", condition.Kind, condition.Interface.Type)
+			return fmt.Errorf("projection rule for %s (%s/%s) sets outsidePADE with operations/project/require/cover; choose one classification", label, condition.Kind, condition.Interface.Type)
 		}
 		return nil
 	}
 
 	if hasOps && projectFamily {
-		return fmt.Errorf("projection rule for %s/%s sets both operations and project/require/cover; choose one mechanism", condition.Kind, condition.Interface.Type)
+		return fmt.Errorf("projection rule for %s (%s/%s) sets both operations and project/require/cover; choose one mechanism", label, condition.Kind, condition.Interface.Type)
 	}
 
 	if hasOps {
-		return projectOperations(condition, rule, capabilities)
+		return projectOperations(condition, rule, capabilities, index)
 	}
 	if hasProject {
-		return projectFields(condition, rule, capabilities)
+		return projectFields(condition, rule, capabilities, index)
 	}
 	if projectFamily {
-		return fmt.Errorf("projection rule for %s/%s sets require/cover without project", condition.Kind, condition.Interface.Type)
+		return fmt.Errorf("projection rule for %s (%s/%s) sets require/cover without project", label, condition.Kind, condition.Interface.Type)
 	}
-	return fmt.Errorf("condition %s/%s matched a PADE-relevant rule with no operations or project clauses", condition.Kind, condition.Interface.Type)
+	return fmt.Errorf("condition %s (%s/%s) matched a PADE-relevant rule with no operations or project clauses", label, condition.Kind, condition.Interface.Type)
 }
 
-func projectOperations(condition model.Condition, rule model.ProjectionRule, capabilities map[string]model.CapabilityRequest) error {
+func projectOperations(condition model.Condition, rule model.ProjectionRule, capabilities map[string]model.CapabilityRequest, index int) error {
+	label := model.ConditionLabel(condition, index)
 	if len(condition.Interface.Operations) == 0 {
-		return fmt.Errorf("condition %s/%s has no operations; operations-backed rules require interface.operations[].name", condition.Kind, condition.Interface.Type)
+		return fmt.Errorf("condition %s (%s/%s) has no operations; operations-backed rules require interface.operations[].name", label, condition.Kind, condition.Interface.Type)
 	}
 
 	for _, operation := range condition.Interface.Operations {
 		mapping, ok := rule.Operations[operation.Name]
 		if !ok {
-			return fmt.Errorf("no projection for %s/%s operation %s", condition.Kind, condition.Interface.Type, operation.Name)
+			return fmt.Errorf("no projection for %s (%s/%s) operation %q", label, condition.Kind, condition.Interface.Type, operation.Name)
 		}
 		if mapping.Capability == "" {
-			return fmt.Errorf("projection for %s/%s operation %s has an empty capability", condition.Kind, condition.Interface.Type, operation.Name)
+			return fmt.Errorf("projection for %s (%s/%s) operation %q has an empty capability", label, condition.Kind, condition.Interface.Type, operation.Name)
 		}
 		if err := mergeCapability(capabilities, mapping.Capability, model.CapabilityRequest{
 			Access:   mapping.Access,
@@ -111,14 +113,15 @@ func projectOperations(condition model.Condition, rule model.ProjectionRule, cap
 	return nil
 }
 
-func projectFields(condition model.Condition, rule model.ProjectionRule, capabilities map[string]model.CapabilityRequest) error {
+func projectFields(condition model.Condition, rule model.ProjectionRule, capabilities map[string]model.CapabilityRequest, index int) error {
+	label := model.ConditionLabel(condition, index)
 	for _, pred := range rule.Require {
 		ok, err := evaluatePredicate(condition, pred)
 		if err != nil {
-			return fmt.Errorf("condition %s/%s require %s: %w", condition.Kind, condition.Interface.Type, pred.Path, err)
+			return fmt.Errorf("condition %s (%s/%s) require %s: %w", label, condition.Kind, condition.Interface.Type, pred.Path, err)
 		}
 		if !ok {
-			return fmt.Errorf("condition %s/%s does not satisfy require %s", condition.Kind, condition.Interface.Type, describePredicate(pred))
+			return fmt.Errorf("condition %s (%s/%s) does not satisfy require %s", label, condition.Kind, condition.Interface.Type, describePredicate(pred))
 		}
 	}
 
@@ -127,13 +130,13 @@ func projectFields(condition model.Condition, rule model.ProjectionRule, capabil
 
 	for _, clause := range rule.Project {
 		if clause.Capability == "" {
-			return fmt.Errorf("projection rule for %s/%s has a project clause with an empty capability", condition.Kind, condition.Interface.Type)
+			return fmt.Errorf("projection rule for %s (%s/%s) has a project clause with an empty capability", label, condition.Kind, condition.Interface.Type)
 		}
 		satisfied := true
 		for _, pred := range clause.When {
 			ok, err := evaluatePredicate(condition, pred)
 			if err != nil {
-				return fmt.Errorf("condition %s/%s project when %s: %w", condition.Kind, condition.Interface.Type, pred.Path, err)
+				return fmt.Errorf("condition %s (%s/%s) project when %s: %w", label, condition.Kind, condition.Interface.Type, pred.Path, err)
 			}
 			if !ok {
 				satisfied = false
@@ -166,20 +169,20 @@ func projectFields(condition model.Condition, rule model.ProjectionRule, capabil
 	for _, path := range rule.Cover {
 		values, err := interfaceArrayStrings(condition, path)
 		if err != nil {
-			return fmt.Errorf("condition %s/%s cover %s: %w", condition.Kind, condition.Interface.Type, path, err)
+			return fmt.Errorf("condition %s (%s/%s) cover %s: %w", label, condition.Kind, condition.Interface.Type, path, err)
 		}
 		if len(values) == 0 {
-			return fmt.Errorf("condition %s/%s cover %s: array is missing or empty", condition.Kind, condition.Interface.Type, path)
+			return fmt.Errorf("condition %s (%s/%s) cover %s: array is missing or empty", label, condition.Kind, condition.Interface.Type, path)
 		}
 		for _, value := range values {
 			if !covered[path][value] {
-				return fmt.Errorf("condition %s/%s cover %s: value %q is not accounted for by any satisfied project clause", condition.Kind, condition.Interface.Type, path, value)
+				return fmt.Errorf("condition %s (%s/%s) cover %s: value %q is not accounted for by any satisfied project clause", label, condition.Kind, condition.Interface.Type, path, value)
 			}
 		}
 	}
 
 	if emittedForCondition == 0 {
-		return fmt.Errorf("condition %s/%s matched a project rule but emitted no capabilities; use outsidePADE to accept with none", condition.Kind, condition.Interface.Type)
+		return fmt.Errorf("condition %s (%s/%s) matched a project rule but emitted no capabilities; use outsidePADE to accept with none", label, condition.Kind, condition.Interface.Type)
 	}
 	return nil
 }
@@ -195,7 +198,8 @@ func mergeCapability(capabilities map[string]model.CapabilityRequest, name strin
 	return nil
 }
 
-func matchingRule(rules []model.ProjectionRule, condition model.Condition) (model.ProjectionRule, error) {
+func matchingRule(rules []model.ProjectionRule, condition model.Condition, index int) (model.ProjectionRule, error) {
+	label := model.ConditionLabel(condition, index)
 	var match *model.ProjectionRule
 	for i := range rules {
 		rule := &rules[i]
@@ -203,12 +207,12 @@ func matchingRule(rules []model.ProjectionRule, condition model.Condition) (mode
 			continue
 		}
 		if match != nil {
-			return model.ProjectionRule{}, fmt.Errorf("multiple projection rules match %s/%s", condition.Kind, condition.Interface.Type)
+			return model.ProjectionRule{}, fmt.Errorf("multiple projection rules match %s (%s/%s)", label, condition.Kind, condition.Interface.Type)
 		}
 		match = rule
 	}
 	if match == nil {
-		return model.ProjectionRule{}, fmt.Errorf("no projection rule matches %s/%s", condition.Kind, condition.Interface.Type)
+		return model.ProjectionRule{}, fmt.Errorf("no projection rule matches %s (%s/%s)", label, condition.Kind, condition.Interface.Type)
 	}
 	return *match, nil
 }

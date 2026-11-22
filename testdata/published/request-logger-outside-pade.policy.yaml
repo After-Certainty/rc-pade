@@ -1,0 +1,14 @@
+# Operator projection policy for the published request-logger-http Profile.
+# api/http and cache/key_value are intentionally outside PADE responsibility.
+# This is platform-support classification, not Runtime Conditions validation.
+apiVersion: rc-pade.local/v1alpha1
+kind: ProjectionPolicy
+rules:
+  - match:
+      kind: api
+      interfaceType: http
+    outsidePADE: true
+  - match:
+      kind: cache
+      interfaceType: key_value
+    outsidePADE: true

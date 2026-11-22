@@ -1,0 +1,45 @@
+# Generated from apps/request-logger-http by portable-profile/scripts/generate-profile.sh.
+# Do not edit; regenerate instead.
+apiVersion: runtimeconditions.io/v1alpha1
+kind: RuntimeConditionsProfile
+metadata:
+    name: request-logger-http
+workload:
+    uri: github.com/runtimeconditions/rc-demos/apps/request-logger-http
+    version: dev
+extensions:
+    - https://runtimeconditions.io/extensions/rc/common-integrations:v1alpha2
+    - https://runtimeconditions.io/extensions/rc/env-configuration:v1alpha2
+conditions:
+    - configuration:
+        env:
+            - name: TODOS_API_URL
+              property: baseUrl
+      interface:
+        operations:
+            - method: GET
+              path: /todos/{id}
+              responseSchema:
+                completed: boolean
+                id: integer
+                title: string
+        spec:
+            format: openapi
+            uri: catalog://api/default/todos-api
+            version: 1.0.0
+        type: http
+      kind: api
+    - configuration:
+        alternatives:
+            - env:
+                - name: REDIS_URL
+                  property: url
+            - env:
+                - name: REDIS_HOST
+                  property: hostname
+                - name: REDIS_PORT
+                  property: port
+      interface:
+        engine: redis
+        type: key_value
+      kind: cache
