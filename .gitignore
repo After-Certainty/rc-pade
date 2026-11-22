@@ -1,5 +1,6 @@
 /bin/
-rc-pade
+# Built CLI binary at repo root (do not ignore cmd/rc-pade/).
+/rc-pade
 .DS_Store
 /.work/
 experiments/004-coder-workspace/generated/

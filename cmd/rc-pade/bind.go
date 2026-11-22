@@ -23,6 +23,7 @@ type bindOptions struct {
 	allowed         string
 	output          string
 	session         string
+	supportReport   string
 }
 
 type brokerBinding struct {
@@ -47,6 +48,7 @@ func runBindCommand(args []string) {
 	allowed := fs.String("allow-capabilities", "", "operator-owned comma-separated capability allowlist")
 	output := fs.String("output", "", "absolute PADE Consumer bindings path to replace atomically")
 	session := fs.String("session-out", "", "optional absolute path for the generated PADE DevelopmentSession")
+	supportReport := fs.String("support-report", "", "optional absolute path for a local PlatformSupportReport YAML (not an upstream RC standard)")
 	_ = fs.Parse(args)
 
 	if err := runBind(bindOptions{
@@ -56,6 +58,7 @@ func runBindCommand(args []string) {
 		allowed:         *allowed,
 		output:          *output,
 		session:         *session,
+		supportReport:   *supportReport,
 	}); err != nil {
 		fatal(err)
 	}
@@ -65,18 +68,34 @@ func runBind(c bindOptions) error {
 	if c.output == "" || !filepath.IsAbs(c.output) {
 		return errors.New("--output must be an absolute path")
 	}
-	// Revoke previous local capabilities before reading any caller-supplied
-	// inputs. A failed trust handoff, projection, policy, or binding step must
-	// never leave stale authority configured locally.
+
+	// Pre-write: refuse when --output collides with a trusted input (including
+	// through symlinked parents). Revoking would destroy that input, so existing
+	// bindings are left unchanged; the operator must fix paths.
+	if err := rejectPathConflicts(outputInputArtifacts(c)); err != nil {
+		return err
+	}
+
+	// Revoke previous local capabilities before required-argument checks and
+	// before reading caller-supplied inputs. Ordinary failures after this point
+	// leave capabilities: {}.
 	if err := writeAtomic(c.output, []byte("version: \"0.1\"\ncapabilities: {}\n"), 0600); err != nil {
 		return fmt.Errorf("revoke previous local bindings: %w", err)
 	}
 	if c.session != "" && !filepath.IsAbs(c.session) {
 		return errors.New("--session-out must be an absolute path when provided")
 	}
-
+	if c.supportReport != "" && !filepath.IsAbs(c.supportReport) {
+		return errors.New("--support-report must be an absolute path when provided")
+	}
 	if c.verifiedProfile == "" || c.policy == "" || c.broker == "" || c.allowed == "" {
 		return errors.New("verified-profile, policy, broker-binding and allow-capabilities are required")
+	}
+
+	// Post-revoke: reject collisions among all artifacts (report/session/output)
+	// so a support report cannot overwrite empty bindings.
+	if err := rejectPathConflicts(bindArtifactPaths(c)); err != nil {
+		return err
 	}
 
 	// Trust and Runtime Conditions validation intentionally happen before this
@@ -92,10 +111,19 @@ func runBind(c bindOptions) error {
 	if err := readYAML(c.policy, &policy); err != nil {
 		return fmt.Errorf("operator projection policy: %w", err)
 	}
-	session, err := projector.Project(profile, policy, "")
+	if err := requireSupportReportForContinue(policy, c.supportReport); err != nil {
+		return err
+	}
+	session, report, err := projector.ProjectWithSupport(profile, policy, "")
+	if c.supportReport != "" {
+		if writeErr := writeSupportReport(c.supportReport, report); writeErr != nil {
+			return writeErr
+		}
+	}
 	if err != nil {
 		return fmt.Errorf("unsupported Runtime Conditions demand: %w", err)
 	}
+	emitContinueDiagnostics(report)
 
 	allowed, err := parseAllowlist(c.allowed)
 	if err != nil {

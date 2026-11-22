@@ -74,7 +74,8 @@ Generate portable PADE session intent from a Profile:
 ```bash
 go run ./cmd/rc-pade generate \
   --profile examples/s3-put-object/runtime-conditions.yaml \
-  --policy examples/s3-put-object/policy.yaml
+  --policy examples/s3-put-object/policy.yaml \
+  --support-report /tmp/support-report.yaml
 ```
 
 After an external Runtime Conditions trust/validation gate has accepted exact
@@ -112,6 +113,14 @@ This repository intentionally keeps the first version narrow:
 - A generated `DevelopmentSession` remains an untrusted request. PADE broker/provider policy still decides what authority, if any, is fulfilled.
 - `optional: true` on an RC condition becomes `required: false` in the projected PADE capability.
 - Unmapped conditions or operations fail closed rather than silently dropping authority requirements.
+- Unmatched **optional** Conditions also fail closed by default. Operators may set
+  `onUnsupportedOptional: continue` on the ProjectionPolicy to skip them after an
+  explicit local `PlatformSupportReport` outcome (`unsupported_optional`). That
+  report is an rc-pade platform-support artifact, not an upstream Runtime
+  Conditions standard, and it is not broker authorization or provider fulfillment.
+- Continuation is never silent: `Project` rejects continue mode (use
+  `ProjectWithSupport`), and CLI `generate`/`bind` require `--support-report` when
+  continue is enabled. Artifact paths must not collide with bindings/session outputs.
 - The adapter does not infer credentials, AWS account, Region, bucket identity, IAM actions, environment variables, or a provider binding.
 - The adapter does not provision resources.
 - Runtime Conditions validation and handoff trust remain outside the platform-support projection boundary.
