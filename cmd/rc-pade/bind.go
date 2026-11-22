@@ -68,13 +68,17 @@ func runBind(c bindOptions) error {
 	if c.output == "" || !filepath.IsAbs(c.output) {
 		return errors.New("--output must be an absolute path")
 	}
-	if c.verifiedProfile == "" || c.policy == "" || c.broker == "" || c.allowed == "" {
-		return errors.New("verified-profile, policy, broker-binding and allow-capabilities are required")
+
+	// Pre-write: refuse when --output collides with a trusted input (including
+	// through symlinked parents). Revoking would destroy that input, so existing
+	// bindings are left unchanged; the operator must fix paths.
+	if err := rejectPathConflicts(outputInputArtifacts(c)); err != nil {
+		return err
 	}
 
-	// Revoke previous local capabilities before reading any caller-supplied
-	// inputs. A failed trust handoff, projection, policy, path, or binding step
-	// must never leave stale authority configured locally.
+	// Revoke previous local capabilities before required-argument checks and
+	// before reading caller-supplied inputs. Ordinary failures after this point
+	// leave capabilities: {}.
 	if err := writeAtomic(c.output, []byte("version: \"0.1\"\ncapabilities: {}\n"), 0600); err != nil {
 		return fmt.Errorf("revoke previous local bindings: %w", err)
 	}
@@ -84,17 +88,13 @@ func runBind(c bindOptions) error {
 	if c.supportReport != "" && !filepath.IsAbs(c.supportReport) {
 		return errors.New("--support-report must be an absolute path when provided")
 	}
+	if c.verifiedProfile == "" || c.policy == "" || c.broker == "" || c.allowed == "" {
+		return errors.New("verified-profile, policy, broker-binding and allow-capabilities are required")
+	}
 
-	// After revoke, reject path collisions so a failed bind cannot replace the
-	// empty bindings file with a support report or other artifact.
-	if err := rejectPathConflicts(map[string]string{
-		"--verified-profile": c.verifiedProfile,
-		"--policy":           c.policy,
-		"--broker-binding":   c.broker,
-		"--output":           c.output,
-		"--session-out":      c.session,
-		"--support-report":   c.supportReport,
-	}); err != nil {
+	// Post-revoke: reject collisions among all artifacts (report/session/output)
+	// so a support report cannot overwrite empty bindings.
+	if err := rejectPathConflicts(bindArtifactPaths(c)); err != nil {
 		return err
 	}
 

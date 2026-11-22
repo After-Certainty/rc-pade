@@ -45,4 +45,18 @@ optional outcomes:
 Omitted, CLI behavior matches prior releases when continuation is not enabled.
 On `bind`, the report is written even when projection fails, after empty
 bindings revocation. Artifact paths must not collide (for example
-`--support-report` must not equal `--output`).
+`--support-report` must not equal `--output`), including through symlinked
+parent directories.
+
+### Bind path / revoke contract
+
+1. `--output` must be absolute.
+2. Pre-write collision check: `--output` versus trusted inputs (`--verified-profile`,
+   `--policy`, `--broker-binding`), with symlinked parents resolved. If they
+   collide, bind **refuses without writing** — revoking would destroy the input.
+   Existing bindings are left unchanged; the operator must fix paths. This is
+   the impossible-to-safely-revoke conflict case.
+3. Otherwise bind revokes `--output` to `capabilities: {}`.
+4. Required arguments, relative optional outs, and full artifact collisions
+   (including `--support-report` / `--session-out`) are enforced after revoke.
+   Ordinary failures therefore leave empty bindings.

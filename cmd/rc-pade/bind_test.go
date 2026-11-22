@@ -290,6 +290,76 @@ func TestBindSupportReportOnFailureLeavesEmptyBindings(t *testing.T) {
 	}
 }
 
+func TestBindMissingRequiredArgRevokesExistingBindings(t *testing.T) {
+	f := newBindFixture(t)
+	if err := runBind(f.o); err != nil {
+		t.Fatal(err)
+	}
+	assertConsumerBindings(t, f.o.output, "aws.s3.bucket.write")
+
+	f.o.verifiedProfile = ""
+	if err := runBind(f.o); err == nil || !strings.Contains(err.Error(), "required") {
+		t.Fatalf("expected required-argument error, got %v", err)
+	}
+	assertConsumerBindings(t, f.o.output)
+}
+
+func TestBindOutputCollidingWithInputRefusesWithoutDestroyingInput(t *testing.T) {
+	f := newBindFixture(t)
+	if err := runBind(f.o); err != nil {
+		t.Fatal(err)
+	}
+	assertConsumerBindings(t, f.o.output, "aws.s3.bucket.write")
+
+	profileBefore, err := os.ReadFile(f.o.verifiedProfile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.o.output = f.o.verifiedProfile
+	if err := runBind(f.o); err == nil || !strings.Contains(err.Error(), "collides") {
+		t.Fatalf("expected input/output collision, got %v", err)
+	}
+	profileAfter, err := os.ReadFile(f.o.verifiedProfile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(profileBefore) != string(profileAfter) {
+		t.Fatal("trusted profile must not be overwritten when --output collides")
+	}
+	if strings.Contains(string(profileAfter), "capabilities:") {
+		t.Fatal("profile must not become empty bindings")
+	}
+}
+
+func TestBindSymlinkParentAliasCollisionAfterRevoke(t *testing.T) {
+	f := newBindFixture(t)
+	if err := runBind(f.o); err != nil {
+		t.Fatal(err)
+	}
+	assertConsumerBindings(t, f.o.output, "aws.s3.bucket.write")
+
+	dir := filepath.Dir(f.o.output)
+	aliasDir := filepath.Join(filepath.Dir(dir), "alias-dir")
+	if err := os.Symlink(dir, aliasDir); err != nil {
+		t.Fatal(err)
+	}
+	f.o.supportReport = filepath.Join(aliasDir, filepath.Base(f.o.output))
+	if err := os.WriteFile(f.o.policy, []byte("apiVersion: rc-pade.local/v1alpha1\nkind: ProjectionPolicy\nrules: []\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := runBind(f.o); err == nil || !strings.Contains(err.Error(), "collides") {
+		t.Fatalf("expected symlink alias collision, got %v", err)
+	}
+	assertConsumerBindings(t, f.o.output)
+	raw, err := os.ReadFile(f.o.output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(raw), "PlatformSupportReport") {
+		t.Fatalf("bindings must not become a support report: %s", raw)
+	}
+}
+
 func TestBindContinueRequiresSupportReport(t *testing.T) {
 	f := newBindFixture(t)
 	policy := `apiVersion: rc-pade.local/v1alpha1
