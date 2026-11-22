@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -35,5 +36,37 @@ func TestSamePathDistinctFiles(t *testing.T) {
 	}
 	if same {
 		t.Fatal("distinct files must not collide")
+	}
+}
+
+func TestRejectOutputInputConflictsIgnoresDuplicateInputs(t *testing.T) {
+	dir := t.TempDir()
+	shared := filepath.Join(dir, "shared.yaml")
+	output := filepath.Join(dir, "bindings.yaml")
+	if err := os.WriteFile(shared, []byte("x: 1\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	err := rejectOutputInputConflicts(bindOptions{
+		verifiedProfile: shared,
+		policy:          shared,
+		broker:          filepath.Join(dir, "broker.json"),
+		output:          output,
+	})
+	if err != nil {
+		t.Fatalf("duplicate inputs with distinct --output must pass pre-revoke check, got %v", err)
+	}
+}
+
+func TestRejectOutputInputConflictsDetectsOutputVsInput(t *testing.T) {
+	dir := t.TempDir()
+	shared := filepath.Join(dir, "profile.yaml")
+	err := rejectOutputInputConflicts(bindOptions{
+		verifiedProfile: shared,
+		policy:          filepath.Join(dir, "policy.yaml"),
+		broker:          filepath.Join(dir, "broker.json"),
+		output:          shared,
+	})
+	if err == nil || !strings.Contains(err.Error(), "--output") {
+		t.Fatalf("expected --output vs input collision, got %v", err)
 	}
 }

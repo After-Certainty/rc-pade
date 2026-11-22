@@ -304,6 +304,23 @@ func TestBindMissingRequiredArgRevokesExistingBindings(t *testing.T) {
 	assertConsumerBindings(t, f.o.output)
 }
 
+func TestBindDuplicateTrustedInputsRevokesExistingBindings(t *testing.T) {
+	f := newBindFixture(t)
+	if err := runBind(f.o); err != nil {
+		t.Fatal(err)
+	}
+	assertConsumerBindings(t, f.o.output, "aws.s3.bucket.write")
+
+	// Two trusted inputs share one path while --output stays separate. The
+	// pre-revoke check must not catch this (it only compares --output to
+	// inputs), so revoke still runs and leaves capabilities: {}.
+	f.o.policy = f.o.verifiedProfile
+	if err := runBind(f.o); err == nil || !strings.Contains(err.Error(), "collides") {
+		t.Fatalf("expected post-revoke input/input collision, got %v", err)
+	}
+	assertConsumerBindings(t, f.o.output)
+}
+
 func TestBindOutputCollidingWithInputRefusesWithoutDestroyingInput(t *testing.T) {
 	f := newBindFixture(t)
 	if err := runBind(f.o); err != nil {

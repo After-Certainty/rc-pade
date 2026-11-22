@@ -87,17 +87,30 @@ func bindArtifactPaths(c bindOptions) map[string]string {
 	}
 }
 
-// outputInputArtifacts is the pre-write collision set: --output versus trusted
-// inputs only. Optional outputs are checked after revoke.
-func outputInputArtifacts(c bindOptions) map[string]string {
-	out := map[string]string{"--output": c.output}
-	add := func(label, path string) {
-		if path != "" && filepath.IsAbs(path) {
-			out[label] = path
+// rejectOutputInputConflicts compares --output only against trusted input
+// paths. It deliberately does not all-pairs compare inputs to each other;
+// those collisions are enforced after revoke by rejectPathConflicts on
+// bindArtifactPaths so ordinary failures still leave capabilities: {}.
+func rejectOutputInputConflicts(c bindOptions) error {
+	inputs := []struct {
+		label string
+		path  string
+	}{
+		{"--verified-profile", c.verifiedProfile},
+		{"--policy", c.policy},
+		{"--broker-binding", c.broker},
+	}
+	for _, in := range inputs {
+		if in.path == "" || !filepath.IsAbs(in.path) {
+			continue
+		}
+		same, err := samePath(c.output, in.path)
+		if err != nil {
+			return err
+		}
+		if same {
+			return fmt.Errorf("--output path %q collides with %s; refuse to overwrite distinct artifacts", c.output, in.label)
 		}
 	}
-	add("--verified-profile", c.verifiedProfile)
-	add("--policy", c.policy)
-	add("--broker-binding", c.broker)
-	return out
+	return nil
 }
