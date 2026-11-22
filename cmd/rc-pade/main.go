@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -30,42 +31,97 @@ func main() {
 }
 
 func runGenerate(args []string) {
-	fs := flag.NewFlagSet("generate", flag.ExitOnError)
+	out, err := generate(args)
+	if err != nil {
+		fatal(err)
+	}
+	_, _ = os.Stdout.Write(out)
+}
+
+type generateOptions struct {
+	profile       string
+	policy        string
+	name          string
+	supportReport string
+}
+
+func generate(args []string) ([]byte, error) {
+	fs := flag.NewFlagSet("generate", flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
 	profilePath := fs.String("profile", "", "path to a RuntimeConditionsProfile YAML file")
 	policyPath := fs.String("policy", "", "path to an rc-pade ProjectionPolicy YAML file")
 	name := fs.String("name", "", "override PADE metadata.name")
-	supportReport := fs.String("support-report", "", "optional path for a local PlatformSupportReport YAML (not an upstream RC standard)")
-	_ = fs.Parse(args)
-
+	supportReport := fs.String("support-report", "", "path for a local PlatformSupportReport YAML (required when onUnsupportedOptional: continue)")
+	if err := fs.Parse(args); err != nil {
+		return nil, err
+	}
 	if *profilePath == "" || *policyPath == "" {
-		fs.Usage()
-		os.Exit(2)
+		return nil, errors.New("generate requires --profile and --policy")
+	}
+	return runGenerateOpts(generateOptions{
+		profile:       *profilePath,
+		policy:        *policyPath,
+		name:          *name,
+		supportReport: *supportReport,
+	})
+}
+
+func runGenerateOpts(c generateOptions) ([]byte, error) {
+	if err := rejectPathConflicts(map[string]string{
+		"--profile":        c.profile,
+		"--policy":         c.policy,
+		"--support-report": c.supportReport,
+	}); err != nil {
+		return nil, err
 	}
 
 	var profile model.RuntimeConditionsProfile
-	if err := readYAML(*profilePath, &profile); err != nil {
-		fatal(err)
+	if err := readYAML(c.profile, &profile); err != nil {
+		return nil, err
 	}
 	var policy model.ProjectionPolicy
-	if err := readYAML(*policyPath, &policy); err != nil {
-		fatal(err)
+	if err := readYAML(c.policy, &policy); err != nil {
+		return nil, err
+	}
+	if err := requireSupportReportForContinue(policy, c.supportReport); err != nil {
+		return nil, err
 	}
 
-	session, report, err := projector.ProjectWithSupport(profile, policy, *name)
-	if *supportReport != "" {
-		if writeErr := writeSupportReport(*supportReport, report); writeErr != nil {
-			fatal(writeErr)
+	session, report, err := projector.ProjectWithSupport(profile, policy, c.name)
+	if c.supportReport != "" {
+		if writeErr := writeSupportReport(c.supportReport, report); writeErr != nil {
+			return nil, writeErr
 		}
 	}
 	if err != nil {
-		fatal(err)
+		return nil, err
 	}
+	emitContinueDiagnostics(report)
 
 	out, err := yaml.Marshal(session)
 	if err != nil {
-		fatal(fmt.Errorf("marshal DevelopmentSession: %w", err))
+		return nil, fmt.Errorf("marshal DevelopmentSession: %w", err)
 	}
-	_, _ = os.Stdout.Write(out)
+	return out, nil
+}
+
+func requireSupportReportForContinue(policy model.ProjectionPolicy, supportReport string) error {
+	if policy.OnUnsupportedOptional == model.UnsupportedOptionalContinue && supportReport == "" {
+		return errors.New("onUnsupportedOptional: continue requires --support-report so unsupported optional outcomes are explicit")
+	}
+	return nil
+}
+
+func emitContinueDiagnostics(report model.PlatformSupportReport) {
+	if !report.ContinuedDespiteUnsupportedOptional {
+		return
+	}
+	for _, cond := range report.Conditions {
+		if cond.Outcome != model.SupportUnsupportedOptional {
+			continue
+		}
+		fmt.Fprintf(os.Stderr, "rc-pade: unsupported optional %s (%s/%s) skipped under onUnsupportedOptional: continue\n", cond.Label, cond.Kind, cond.InterfaceType)
+	}
 }
 
 func writeSupportReport(path string, report model.PlatformSupportReport) error {
@@ -73,7 +129,7 @@ func writeSupportReport(path string, report model.PlatformSupportReport) error {
 	if err != nil {
 		return fmt.Errorf("marshal PlatformSupportReport: %w", err)
 	}
-	if err := os.WriteFile(path, out, 0600); err != nil {
+	if err := writeAtomic(path, out, 0600); err != nil {
 		return fmt.Errorf("write PlatformSupportReport: %w", err)
 	}
 	return nil

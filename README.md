@@ -118,8 +118,9 @@ This repository intentionally keeps the first version narrow:
   explicit local `PlatformSupportReport` outcome (`unsupported_optional`). That
   report is an rc-pade platform-support artifact, not an upstream Runtime
   Conditions standard, and it is not broker authorization or provider fulfillment.
-- Optional CLI flag `--support-report` on `generate` / `bind` writes that local report
-  without changing the default session/bindings stdout behavior.
+- Continuation is never silent: `Project` rejects continue mode (use
+  `ProjectWithSupport`), and CLI `generate`/`bind` require `--support-report` when
+  continue is enabled. Artifact paths must not collide with bindings/session outputs.
 - The adapter does not infer credentials, AWS account, Region, bucket identity, IAM actions, environment variables, or a provider binding.
 - The adapter does not provision resources.
 - Runtime Conditions validation and handoff trust remain outside the platform-support projection boundary.

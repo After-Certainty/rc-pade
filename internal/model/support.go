@@ -33,10 +33,17 @@ const (
 // PlatformSupportReport records local platform-support outcomes for one
 // Project invocation. It does not represent Runtime Conditions validity,
 // signature trust, broker authorization, or provider fulfillment.
+//
+// When Complete is false, Conditions may be a prefix of the Profile (evaluation
+// stopped at the first failing Condition). Treat incomplete reports as
+// diagnostics only, not a full platform-support evaluation.
 type PlatformSupportReport struct {
-	APIVersion string                   `yaml:"apiVersion"`
-	Kind       string                   `yaml:"kind"`
-	Profile    string                   `yaml:"profile,omitempty"`
+	APIVersion string `yaml:"apiVersion"`
+	Kind       string `yaml:"kind"`
+	Profile    string `yaml:"profile,omitempty"`
+	// Complete is true only when every Condition was evaluated and projection
+	// returned successfully. False means a partial diagnostic.
+	Complete   bool                     `yaml:"complete"`
 	Conditions []ConditionSupportResult `yaml:"conditions"`
 	// ContinuedDespiteUnsupportedOptional is true when at least one optional
 	// unmatched Condition was skipped under onUnsupportedOptional: continue.

@@ -290,6 +290,67 @@ func TestBindSupportReportOnFailureLeavesEmptyBindings(t *testing.T) {
 	}
 }
 
+func TestBindContinueRequiresSupportReport(t *testing.T) {
+	f := newBindFixture(t)
+	policy := `apiVersion: rc-pade.local/v1alpha1
+kind: ProjectionPolicy
+onUnsupportedOptional: continue
+rules:
+  - match:
+      kind: aws.s3
+      interfaceType: bucket
+    operations:
+      PutObject:
+        capability: aws.s3.bucket.write
+        access: write
+`
+	profile := `apiVersion: runtimeconditions.io/v1alpha1
+kind: RuntimeConditionsProfile
+metadata: {name: continue-no-report}
+conditions:
+  - kind: aws.s3
+    interface: {type: bucket, operations: [{name: PutObject}]}
+  - optional: true
+    kind: api
+    interface: {type: http}
+`
+	if err := os.WriteFile(f.o.policy, []byte(policy), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(f.o.verifiedProfile, []byte(profile), 0600); err != nil {
+		t.Fatal(err)
+	}
+	f.o.supportReport = ""
+	if err := runBind(f.o); err == nil || !strings.Contains(err.Error(), "--support-report") {
+		t.Fatalf("expected --support-report requirement, got %v", err)
+	}
+	assertConsumerBindings(t, f.o.output)
+}
+
+func TestBindSupportReportCollidesWithOutputLeavesEmptyBindings(t *testing.T) {
+	f := newBindFixture(t)
+	if err := runBind(f.o); err != nil {
+		t.Fatal(err)
+	}
+	assertConsumerBindings(t, f.o.output, "aws.s3.bucket.write")
+
+	f.o.supportReport = f.o.output
+	if err := os.WriteFile(f.o.policy, []byte("apiVersion: rc-pade.local/v1alpha1\nkind: ProjectionPolicy\nrules: []\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := runBind(f.o); err == nil || !strings.Contains(err.Error(), "collides") {
+		t.Fatalf("expected path collision error, got %v", err)
+	}
+	assertConsumerBindings(t, f.o.output)
+	raw, err := os.ReadFile(f.o.output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(raw), "PlatformSupportReport") {
+		t.Fatalf("bindings output must not become a support report: %s", raw)
+	}
+}
+
 func TestBindRejectsRelativeBindingsTarget(t *testing.T) {
 	f := newBindFixture(t)
 	f.o.output = "bindings.yaml"

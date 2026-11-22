@@ -68,9 +68,13 @@ func runBind(c bindOptions) error {
 	if c.output == "" || !filepath.IsAbs(c.output) {
 		return errors.New("--output must be an absolute path")
 	}
+	if c.verifiedProfile == "" || c.policy == "" || c.broker == "" || c.allowed == "" {
+		return errors.New("verified-profile, policy, broker-binding and allow-capabilities are required")
+	}
+
 	// Revoke previous local capabilities before reading any caller-supplied
-	// inputs. A failed trust handoff, projection, policy, or binding step must
-	// never leave stale authority configured locally.
+	// inputs. A failed trust handoff, projection, policy, path, or binding step
+	// must never leave stale authority configured locally.
 	if err := writeAtomic(c.output, []byte("version: \"0.1\"\ncapabilities: {}\n"), 0600); err != nil {
 		return fmt.Errorf("revoke previous local bindings: %w", err)
 	}
@@ -81,8 +85,17 @@ func runBind(c bindOptions) error {
 		return errors.New("--support-report must be an absolute path when provided")
 	}
 
-	if c.verifiedProfile == "" || c.policy == "" || c.broker == "" || c.allowed == "" {
-		return errors.New("verified-profile, policy, broker-binding and allow-capabilities are required")
+	// After revoke, reject path collisions so a failed bind cannot replace the
+	// empty bindings file with a support report or other artifact.
+	if err := rejectPathConflicts(map[string]string{
+		"--verified-profile": c.verifiedProfile,
+		"--policy":           c.policy,
+		"--broker-binding":   c.broker,
+		"--output":           c.output,
+		"--session-out":      c.session,
+		"--support-report":   c.supportReport,
+	}); err != nil {
+		return err
 	}
 
 	// Trust and Runtime Conditions validation intentionally happen before this
@@ -98,6 +111,9 @@ func runBind(c bindOptions) error {
 	if err := readYAML(c.policy, &policy); err != nil {
 		return fmt.Errorf("operator projection policy: %w", err)
 	}
+	if err := requireSupportReportForContinue(policy, c.supportReport); err != nil {
+		return err
+	}
 	session, report, err := projector.ProjectWithSupport(profile, policy, "")
 	if c.supportReport != "" {
 		if writeErr := writeSupportReport(c.supportReport, report); writeErr != nil {
@@ -107,6 +123,7 @@ func runBind(c bindOptions) error {
 	if err != nil {
 		return fmt.Errorf("unsupported Runtime Conditions demand: %w", err)
 	}
+	emitContinueDiagnostics(report)
 
 	allowed, err := parseAllowlist(c.allowed)
 	if err != nil {

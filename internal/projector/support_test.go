@@ -251,3 +251,34 @@ func TestInvalidOnUnsupportedOptionalRejected(t *testing.T) {
 		t.Fatalf("expected invalid mode error, got %v", err)
 	}
 }
+
+func TestProjectRejectsContinueMode(t *testing.T) {
+	policy := s3Policy()
+	policy.OnUnsupportedOptional = model.UnsupportedOptionalContinue
+	_, err := Project(s3Profile(false), policy, "")
+	if err == nil || !strings.Contains(err.Error(), "ProjectWithSupport") {
+		t.Fatalf("expected Project to reject continue mode, got %v", err)
+	}
+}
+
+func TestCompleteFlagOnSuccessAndFailure(t *testing.T) {
+	_, report, err := ProjectWithSupport(s3Profile(false), s3Policy(), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !report.Complete {
+		t.Fatal("successful projection must set complete=true")
+	}
+
+	_, failReport, err := ProjectWithSupport(s3Profile(false), model.ProjectionPolicy{
+		APIVersion: model.ProjectionPolicyAPIVersion,
+		Kind:       model.ProjectionPolicyKind,
+		Rules:      nil,
+	}, "")
+	if err == nil {
+		t.Fatal("expected failure")
+	}
+	if failReport.Complete {
+		t.Fatal("failed projection must leave complete=false")
+	}
+}

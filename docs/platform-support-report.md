@@ -22,9 +22,27 @@ operator platform-support matching. It is **not**:
 
 Unmatched demand is distinct from projection-policy errors and from broker denial.
 
+## Completeness
+
+`complete: true` means every Condition was evaluated and projection succeeded.
+`complete: false` means evaluation stopped early; `conditions` may be only a
+prefix of the Profile. Treat incomplete reports as diagnostics, not a full
+platform-support evaluation.
+
+## Continuation and explicit reporting
+
+`onUnsupportedOptional: continue` requires callers to observe unsupported
+optional outcomes:
+
+- Library: use `ProjectWithSupport` (plain `Project` rejects continue mode).
+- CLI: `--support-report` is required when the policy enables continue.
+  Successful continuation also emits stderr diagnostics for each skipped
+  optional Condition.
+
 ## CLI
 
-Optional `--support-report PATH` on `generate` and `bind` writes the report.
-Omitted, CLI behavior matches prior releases aside from the new policy field.
+`--support-report PATH` on `generate` and `bind` writes the report atomically.
+Omitted, CLI behavior matches prior releases when continuation is not enabled.
 On `bind`, the report is written even when projection fails, after empty
-bindings revocation.
+bindings revocation. Artifact paths must not collide (for example
+`--support-report` must not equal `--output`).

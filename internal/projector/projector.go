@@ -11,8 +11,13 @@ import (
 var padeNamePattern = regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`)
 
 // Project projects a verified Runtime Conditions Profile under operator policy.
-// It is equivalent to ProjectWithSupport without exposing the local support report.
+// It rejects onUnsupportedOptional: continue so unsupported optional outcomes
+// cannot be discarded by callers that ignore the support report. Use
+// ProjectWithSupport when continuation is configured.
 func Project(profile model.RuntimeConditionsProfile, policy model.ProjectionPolicy, nameOverride string) (model.DevelopmentSession, error) {
+	if policy.OnUnsupportedOptional == model.UnsupportedOptionalContinue {
+		return model.DevelopmentSession{}, fmt.Errorf("onUnsupportedOptional %q requires ProjectWithSupport so unsupported optional outcomes are not discarded", model.UnsupportedOptionalContinue)
+	}
 	session, _, err := ProjectWithSupport(profile, policy, nameOverride)
 	return session, err
 }
@@ -103,6 +108,7 @@ func ProjectWithSupport(profile model.RuntimeConditionsProfile, policy model.Pro
 		annotations["rc-pade.local/source-workload-version"] = profile.Workload.Version
 	}
 
+	report.Complete = true
 	return model.DevelopmentSession{
 		APIVersion: model.PADEAPIVersion,
 		Kind:       model.PADEKind,
