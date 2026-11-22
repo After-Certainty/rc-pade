@@ -1,10 +1,14 @@
 package projector
 
 import (
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/After-Certainty/rc-pade/internal/model"
+	"gopkg.in/yaml.v3"
 )
 
 func TestProjectS3PutObject(t *testing.T) {
@@ -48,6 +52,49 @@ func TestUnmappedOperationFailsClosed(t *testing.T) {
 	}
 }
 
+func TestEmptyOperationNameRejectedEvenWithEmptyPolicyKey(t *testing.T) {
+	profile := model.RuntimeConditionsProfile{
+		APIVersion: model.RuntimeConditionsAPIVersion,
+		Kind:       model.RuntimeConditionsKind,
+		Metadata:   model.RCMetadata{Name: "http-ops"},
+		Conditions: []model.Condition{{
+			Kind: "api",
+			Interface: model.RCInterface{
+				Type: "http",
+				Operations: []model.Operation{{
+					// Structured method/path ops have no legacy name.
+					Fields: map[string]any{"method": "GET", "path": "/todos/{id}"},
+				}},
+				Fields: map[string]any{
+					"type": "http",
+					"operations": []any{
+						map[string]any{"method": "GET", "path": "/todos/{id}"},
+					},
+				},
+			},
+		}},
+	}
+	policy := model.ProjectionPolicy{
+		APIVersion: model.ProjectionPolicyAPIVersion,
+		Kind:       model.ProjectionPolicyKind,
+		Rules: []model.ProjectionRule{{
+			Match: model.ConditionMatch{Kind: "api", InterfaceType: "http"},
+			// Empty key must not match nameless structured operations.
+			Operations: map[string]model.OperationMapping{
+				"": {Capability: "should.not.project", Access: "read"},
+			},
+		}},
+	}
+
+	_, err := Project(profile, policy, "")
+	if err == nil || !strings.Contains(err.Error(), "without a name") {
+		t.Fatalf("expected empty-name rejection, got %v", err)
+	}
+	if strings.Contains(err.Error(), "should.not.project") {
+		t.Fatalf("empty policy key must not project a capability: %v", err)
+	}
+}
+
 func TestUnmatchedConditionFailsClosed(t *testing.T) {
 	profile := s3Profile(false)
 	profile.Conditions = append(profile.Conditions, model.Condition{
@@ -58,7 +105,7 @@ func TestUnmatchedConditionFailsClosed(t *testing.T) {
 	})
 
 	_, err := Project(profile, s3Policy(), "")
-	if err == nil || !strings.Contains(err.Error(), "no projection rule matches api/http") {
+	if err == nil || !strings.Contains(err.Error(), "no projection rule matches") || !strings.Contains(err.Error(), "api/http") {
 		t.Fatalf("expected unmatched api/http error, got %v", err)
 	}
 }
@@ -354,6 +401,127 @@ func TestOptionalGitFetchProjectsRequiredFalse(t *testing.T) {
 		t.Fatalf("Project() error = %v", err)
 	}
 	assertCap(t, got, "github.repo.read", "read", false)
+}
+
+func TestPublishedRequestLoggerOutsidePADE(t *testing.T) {
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller failed")
+	}
+	root := filepath.Join(filepath.Dir(thisFile), "..", "..", "testdata", "published")
+	profileRaw, err := os.ReadFile(filepath.Join(root, "request-logger-http.profile.yaml"))
+	if err != nil {
+		t.Fatalf("read profile: %v", err)
+	}
+	policyRaw, err := os.ReadFile(filepath.Join(root, "request-logger-outside-pade.policy.yaml"))
+	if err != nil {
+		t.Fatalf("read policy: %v", err)
+	}
+
+	var profile model.RuntimeConditionsProfile
+	if err := yaml.Unmarshal(profileRaw, &profile); err != nil {
+		t.Fatalf("unmarshal profile: %v", err)
+	}
+	var policy model.ProjectionPolicy
+	if err := yaml.Unmarshal(policyRaw, &policy); err != nil {
+		t.Fatalf("unmarshal policy: %v", err)
+	}
+
+	got, err := Project(profile, policy, "")
+	if err != nil {
+		t.Fatalf("Project() error = %v", err)
+	}
+	if len(got.Spec.Capabilities) != 0 {
+		t.Fatalf("published request-logger demand is outside PADE; expected zero capabilities, got %#v", got.Spec.Capabilities)
+	}
+	if got.Metadata.Annotations["rc-pade.local/source-profile"] != "request-logger-http" {
+		t.Fatalf("source-profile annotation = %#v", got.Metadata.Annotations)
+	}
+}
+
+func TestPublishedRequestLoggerUnsupportedWithoutPolicy(t *testing.T) {
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller failed")
+	}
+	path := filepath.Join(filepath.Dir(thisFile), "..", "..", "testdata", "published", "request-logger-http.profile.yaml")
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read profile: %v", err)
+	}
+	var profile model.RuntimeConditionsProfile
+	if err := yaml.Unmarshal(raw, &profile); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+
+	_, err = Project(profile, s3Policy(), "")
+	if err == nil {
+		t.Fatal("expected unsupported platform-support failure")
+	}
+	if !strings.Contains(err.Error(), "no projection rule matches") {
+		t.Fatalf("expected unmatched rule error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), "condition[0]") {
+		t.Fatalf("expected local reporting label for unnamed condition, got %v", err)
+	}
+	if !strings.Contains(err.Error(), "api/http") {
+		t.Fatalf("expected kind/type in error, got %v", err)
+	}
+}
+
+func TestNamedConditionLabelInUnsupportedError(t *testing.T) {
+	profile := model.RuntimeConditionsProfile{
+		APIVersion: model.RuntimeConditionsAPIVersion,
+		Kind:       model.RuntimeConditionsKind,
+		Metadata:   model.RCMetadata{Name: "named-unsupported"},
+		Conditions: []model.Condition{{
+			Name: "todos-api",
+			Kind: "api",
+			Interface: model.RCInterface{
+				Type:   "http",
+				Fields: map[string]any{"type": "http"},
+			},
+		}},
+	}
+	_, err := Project(profile, s3Policy(), "")
+	if err == nil || !strings.Contains(err.Error(), "todos-api") {
+		t.Fatalf("expected named condition label in error, got %v", err)
+	}
+}
+
+func TestCacheOutsidePADEAcceptsNoCapability(t *testing.T) {
+	profile := model.RuntimeConditionsProfile{
+		APIVersion: model.RuntimeConditionsAPIVersion,
+		Kind:       model.RuntimeConditionsKind,
+		Metadata:   model.RCMetadata{Name: "cache-only"},
+		Conditions: []model.Condition{{
+			Kind: "cache",
+			Interface: model.RCInterface{
+				Type:   "key_value",
+				Fields: map[string]any{"type": "key_value", "engine": "redis"},
+			},
+			Configuration: map[string]any{
+				"alternatives": []any{
+					map[string]any{"env": []any{map[string]any{"name": "REDIS_URL", "property": "url"}}},
+				},
+			},
+		}},
+	}
+	policy := model.ProjectionPolicy{
+		APIVersion: model.ProjectionPolicyAPIVersion,
+		Kind:       model.ProjectionPolicyKind,
+		Rules: []model.ProjectionRule{{
+			Match:       model.ConditionMatch{Kind: "cache", InterfaceType: "key_value"},
+			OutsidePADE: true,
+		}},
+	}
+	got, err := Project(profile, policy, "")
+	if err != nil {
+		t.Fatalf("Project() error = %v", err)
+	}
+	if len(got.Spec.Capabilities) != 0 {
+		t.Fatalf("expected no capabilities, got %#v", got.Spec.Capabilities)
+	}
 }
 
 func TestProjectModeZeroEmissionFails(t *testing.T) {

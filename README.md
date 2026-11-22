@@ -122,6 +122,26 @@ Runtime Conditions describes what a workload requires. PADE describes developmen
 
 Keeping that opinion here lets both contracts evolve independently and makes the interoperability claim testable: an independent implementation can compose the two published formats without importing either codebase.
 
+## Published Profile compatibility
+
+`rc-pade` consumes already-verified Runtime Conditions Profiles. It preserves
+canonical first-party extension refs (`/extensions/rc/...:v1alpha2`), unnamed
+Conditions, extension-defined `configuration`, and structured operation fields
+(`method`/`path`/…). Local reporting labels (`condition[i]` when `name` is
+omitted) are separate from Profile bytes and are never written back into the
+Profile.
+
+A committed fixture from upstream `runtimeconditions/rc-demos` lives under
+[`testdata/published/`](testdata/published/). The request-logger Profile proves
+decode + explicit `outsidePADE` classification for `api`/`http` and
+`cache`/`key_value`. That is **not** PADE fulfillment: those requirements are
+outside PADE’s responsibility. Existing S3 and source-control projection paths
+remain the PADE-relevant compatibility surface.
+
+Verified handoffs must feed **exact Profile bytes** into `bind` /
+`--verified-profile`. Typed decode preserves semantics for projection; it must
+not reserialize or normalize trusted handoff artifacts.
+
 ## Status
 
 Very early experiment. The policy format (`rc-pade.local/v1alpha1`) is local to this repository and deliberately provisional.
