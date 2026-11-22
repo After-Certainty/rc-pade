@@ -96,6 +96,11 @@ func projectOperations(condition model.Condition, rule model.ProjectionRule, cap
 	}
 
 	for _, operation := range condition.Interface.Operations {
+		// Operations-backed projection requires a non-empty legacy name. Structured
+		// method/path operations must not match a policy entry keyed by "".
+		if operation.Name == "" {
+			return fmt.Errorf("condition %s (%s/%s) has an operation without a name; operations-backed rules require interface.operations[].name", label, condition.Kind, condition.Interface.Type)
+		}
 		mapping, ok := rule.Operations[operation.Name]
 		if !ok {
 			return fmt.Errorf("no projection for %s (%s/%s) operation %q", label, condition.Kind, condition.Interface.Type, operation.Name)

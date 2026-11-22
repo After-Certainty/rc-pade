@@ -39,6 +39,11 @@ type Condition struct {
 
 // RCInterface keeps typed core fields for the legacy operations projection path
 // and preserves arbitrary extension-defined interface keys in Fields.
+//
+// After UnmarshalYAML, Fields is authoritative for the full interface mapping
+// (including the operations array as decoded from YAML). Typed Type/Operations
+// are derived convenience views for projection. MarshalYAML remits Fields when
+// present; do not assume typed Operations are re-serialized independently.
 type RCInterface struct {
 	Type       string
 	Operations []Operation
@@ -49,6 +54,11 @@ type RCInterface struct {
 
 // Operation keeps the legacy name-based projection key and preserves
 // extension-defined operation fields (method, path, schemas, …) in Fields.
+//
+// After UnmarshalYAML, Fields is authoritative for the operation mapping.
+// Name is a derived convenience for operations-backed projection rules and is
+// empty when the upstream operation uses structured keys (e.g. method/path)
+// without a legacy name. MarshalYAML remits Fields when present.
 type Operation struct {
 	Name   string
 	Fields map[string]any

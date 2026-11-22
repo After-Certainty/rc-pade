@@ -82,6 +82,70 @@ conditions:
 	}
 }
 
+func TestOperationMarshalUnmarshalFieldsAuthoritative(t *testing.T) {
+	const structured = `
+method: GET
+path: /todos/{id}
+responseSchema:
+  id: integer
+`
+	var op Operation
+	if err := yaml.Unmarshal([]byte(structured), &op); err != nil {
+		t.Fatalf("unmarshal structured: %v", err)
+	}
+	if op.Name != "" {
+		t.Fatalf("Name = %q, want empty", op.Name)
+	}
+	if op.Fields["method"] != "GET" || op.Fields["path"] != "/todos/{id}" {
+		t.Fatalf("Fields = %#v", op.Fields)
+	}
+	out, err := yaml.Marshal(op)
+	if err != nil {
+		t.Fatalf("marshal structured: %v", err)
+	}
+	var round Operation
+	if err := yaml.Unmarshal(out, &round); err != nil {
+		t.Fatalf("remarshal unmarshal: %v", err)
+	}
+	if round.Name != "" || round.Fields["method"] != "GET" || round.Fields["path"] != "/todos/{id}" {
+		t.Fatalf("structured round-trip = %#v", round)
+	}
+
+	// Legacy Name-only: Fields nil, MarshalYAML emits {"name": ...}.
+	legacy := Operation{Name: "PutObject"}
+	legacyOut, err := yaml.Marshal(legacy)
+	if err != nil {
+		t.Fatalf("marshal legacy: %v", err)
+	}
+	var legacyRound Operation
+	if err := yaml.Unmarshal(legacyOut, &legacyRound); err != nil {
+		t.Fatalf("unmarshal legacy: %v", err)
+	}
+	if legacyRound.Name != "PutObject" {
+		t.Fatalf("legacy Name = %q", legacyRound.Name)
+	}
+	if legacyRound.Fields["name"] != "PutObject" {
+		t.Fatalf("legacy Fields after decode = %#v", legacyRound.Fields)
+	}
+
+	// Fields set is authoritative on marshal even if Name differs.
+	mutated := Operation{
+		Name:   "stale",
+		Fields: map[string]any{"name": "PutObject", "extra": true},
+	}
+	mutatedOut, err := yaml.Marshal(mutated)
+	if err != nil {
+		t.Fatalf("marshal mutated: %v", err)
+	}
+	var mutatedMap map[string]any
+	if err := yaml.Unmarshal(mutatedOut, &mutatedMap); err != nil {
+		t.Fatalf("unmarshal mutated map: %v", err)
+	}
+	if mutatedMap["name"] != "PutObject" || mutatedMap["extra"] != true {
+		t.Fatalf("Fields should be authoritative on marshal, got %#v", mutatedMap)
+	}
+}
+
 func TestConditionLabelNamedAndUnnamed(t *testing.T) {
 	if got := ConditionLabel(Condition{Name: "repo"}, 3); got != "repo" {
 		t.Fatalf("named label = %q", got)

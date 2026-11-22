@@ -52,6 +52,49 @@ func TestUnmappedOperationFailsClosed(t *testing.T) {
 	}
 }
 
+func TestEmptyOperationNameRejectedEvenWithEmptyPolicyKey(t *testing.T) {
+	profile := model.RuntimeConditionsProfile{
+		APIVersion: model.RuntimeConditionsAPIVersion,
+		Kind:       model.RuntimeConditionsKind,
+		Metadata:   model.RCMetadata{Name: "http-ops"},
+		Conditions: []model.Condition{{
+			Kind: "api",
+			Interface: model.RCInterface{
+				Type: "http",
+				Operations: []model.Operation{{
+					// Structured method/path ops have no legacy name.
+					Fields: map[string]any{"method": "GET", "path": "/todos/{id}"},
+				}},
+				Fields: map[string]any{
+					"type": "http",
+					"operations": []any{
+						map[string]any{"method": "GET", "path": "/todos/{id}"},
+					},
+				},
+			},
+		}},
+	}
+	policy := model.ProjectionPolicy{
+		APIVersion: model.ProjectionPolicyAPIVersion,
+		Kind:       model.ProjectionPolicyKind,
+		Rules: []model.ProjectionRule{{
+			Match: model.ConditionMatch{Kind: "api", InterfaceType: "http"},
+			// Empty key must not match nameless structured operations.
+			Operations: map[string]model.OperationMapping{
+				"": {Capability: "should.not.project", Access: "read"},
+			},
+		}},
+	}
+
+	_, err := Project(profile, policy, "")
+	if err == nil || !strings.Contains(err.Error(), "without a name") {
+		t.Fatalf("expected empty-name rejection, got %v", err)
+	}
+	if strings.Contains(err.Error(), "should.not.project") {
+		t.Fatalf("empty policy key must not project a capability: %v", err)
+	}
+}
+
 func TestUnmatchedConditionFailsClosed(t *testing.T) {
 	profile := s3Profile(false)
 	profile.Conditions = append(profile.Conditions, model.Condition{
