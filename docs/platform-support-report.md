@@ -51,12 +51,13 @@ parent directories.
 ### Bind path / revoke contract
 
 1. `--output` must be absolute.
-2. Pre-write collision check: `--output` versus trusted inputs (`--verified-profile`,
-   `--policy`, `--broker-binding`), with symlinked parents resolved. If they
-   collide, bind **refuses without writing** — revoking would destroy the input.
-   Existing bindings are left unchanged; the operator must fix paths. This is
-   the impossible-to-safely-revoke conflict case.
+2. Pre-write collision check: `--output` **only** versus each trusted input
+   (`--verified-profile`, `--policy`, `--broker-binding`), with symlinked parents
+   resolved. Input/input collisions are not evaluated here. If `--output`
+   collides with an input, bind **refuses without writing** — revoking would
+   destroy the input. Existing bindings are left unchanged; the operator must
+   fix paths. This is the impossible-to-safely-revoke conflict case.
 3. Otherwise bind revokes `--output` to `capabilities: {}`.
-4. Required arguments, relative optional outs, and full artifact collisions
-   (including `--support-report` / `--session-out`) are enforced after revoke.
-   Ordinary failures therefore leave empty bindings.
+4. Required arguments, relative optional outs, and **full all-pairs** artifact
+   collisions (inputs, `--support-report`, `--session-out`, `--output`) are
+   enforced after revoke. Ordinary failures therefore leave empty bindings.

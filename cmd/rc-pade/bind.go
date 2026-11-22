@@ -70,9 +70,11 @@ func runBind(c bindOptions) error {
 	}
 
 	// Pre-write: refuse when --output collides with a trusted input (including
-	// through symlinked parents). Revoking would destroy that input, so existing
-	// bindings are left unchanged; the operator must fix paths.
-	if err := rejectPathConflicts(outputInputArtifacts(c)); err != nil {
+	// through symlinked parents). Only --output is compared to each input;
+	// input/input collisions are checked after revoke. When --output collides
+	// with an input, revoking would destroy that input, so existing bindings
+	// are left unchanged; the operator must fix paths.
+	if err := rejectOutputInputConflicts(c); err != nil {
 		return err
 	}
 
